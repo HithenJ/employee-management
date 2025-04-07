@@ -1,0 +1,43 @@
+<div class="container">
+    <h2>Employee List</h2>
+  
+    <!-- Show employee form for Add/Edit -->
+    <div *ngIf="showForm">
+      <app-employee-form
+        [employee]="selectedEmployee"
+        (formClosed)="onFormClosed()">
+      </app-employee-form>
+    </div>
+  
+    <!-- Show list when form is hidden -->
+    <div *ngIf="!showForm">
+      <table class="table table-bordered mt-4">
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>Name</th>
+            <th>Email</th>
+            <th>Phone</th>
+            <th>Department</th>
+            <th>Salary</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let emp of employees">
+            <td>{{ emp.id }}</td>
+            <td>{{ emp.name }}</td>
+            <td>{{ emp.email }}</td>
+            <td>{{ emp.phone }}</td>
+            <td>{{ emp.department }}</td>
+            <td>{{ emp.salary }}</td>
+            <td>
+              <button class="btn btn-warning btn-sm me-2" (click)="editEmployee(emp)">Edit</button>
+              <button class="btn btn-danger btn-sm" (click)="deleteEmployee(emp.id)">Delete</button>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+  

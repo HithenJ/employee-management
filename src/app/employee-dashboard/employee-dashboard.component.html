@@ -1,0 +1,99 @@
+<div class="container mt-5">
+  <div class="row g-4">
+
+    <!-- Logout -->
+    <div class="d-flex justify-content-end mb-3">
+      <button class="btn btn-danger btn-sm" (click)="logout()">Logout</button>
+    </div>
+
+    <!-- Profile Card -->
+    <div class="col-md-4">
+      <div class="card shadow rounded-4">
+        <div class="card-body text-center">
+          <h4 class="mb-3">👤 My Profile</h4>
+          <p><strong>Name:</strong> {{ employee?.name }}</p>
+          <p><strong>Email:</strong> {{ employee?.email }}</p>
+          <p><strong>Designation:</strong> {{ employee?.designation }}</p>
+          <p><strong>Department:</strong> {{ employee?.department }}</p>
+          <button class="btn btn-outline-primary btn-sm mt-2">View Full Profile</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Attendance Card -->
+    <div class="col-md-4">
+      <div class="card shadow rounded-4">
+        <div class="card-body text-center">
+          <h4 class="mb-3">📅 My Attendance</h4>
+          <p><strong>Status:</strong>
+            <span class="badge" [ngClass]="attendanceStatus === 'Present' ? 'bg-success' : 'bg-danger'">
+              {{ attendanceStatus || 'Absent' }}
+            </span>
+          </p>
+          <button class="btn btn-outline-success btn-sm mt-2">View Attendance</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Leaves Card -->
+    <div class="col-md-4">
+      <div class="card shadow rounded-4">
+        <div class="card-body text-center">
+          <h4 class="mb-3">🌴 Leaves</h4>
+          <p><strong>Pending Leaves:</strong> {{ pendingLeaves }}</p>
+          <button class="btn btn-outline-warning btn-sm mt-2" (click)="openLeaveForm()">Apply for Leave</button>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Leave Form Modal -->
+  <div *ngIf="showLeaveForm" class="modal-backdrop fade show" (click)="closeLeaveForm()"></div>
+  <div *ngIf="showLeaveForm" class="modal d-block" tabindex="-1">
+    <div class="modal-dialog">
+      <div class="modal-content rounded-3">
+        <div class="modal-header">
+          <h5 class="modal-title">Apply for Leave</h5>
+          <button type="button" class="btn-close" (click)="closeLeaveForm()"></button>
+        </div>
+        <form (ngSubmit)="submitLeaveRequest()" #leaveForm="ngForm">
+          <div class="modal-body">
+            <div class="mb-3">
+              <label>From Date:</label>
+              <input type="date"  class="form-control" [(ngModel)]="fromDate" [min]="today" name="fromDate" required>            </div>
+            <div class="mb-3">
+              <label>To Date:</label>
+              <input type="date" class="form-control" [(ngModel)]="toDate" [min]="fromDate || today" name="toDate" required>            </div>
+            <div class="mb-3">
+              <label>Reason:</label>
+              <input type="text" class="form-control" [(ngModel)]="leaveReason" name="reason" required>
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button type="submit" class="btn btn-primary btn-sm" [disabled]="leaveForm.invalid">Submit</button>
+            <button type="button" class="btn btn-secondary btn-sm" (click)="closeLeaveForm()">Cancel</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Notifications -->
+ <div class="card-body mt-4">
+  <div *ngIf="loading">Loading notifications...</div>
+
+  <div *ngIf="!loading && notifications.length === 0">
+    No notifications available.
+  </div>
+
+  <ul *ngIf="!loading && notifications.length > 0">
+    <li *ngFor="let n of notifications">
+      <strong>{{ n.message }}</strong> 
+      <br>
+      <small>{{ n.date | date: 'short' }}</small>
+    </li>
+  </ul>
+</div>
+
+</div>

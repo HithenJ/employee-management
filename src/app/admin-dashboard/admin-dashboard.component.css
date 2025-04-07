@@ -1,0 +1,10 @@
+.active {
+    font-weight: bold;
+    background-color: #17a2b8;
+    border-radius: 4px;
+  }
+  .nav-link:hover {
+    background-color: #495057;
+    border-radius: 4px;
+  }
+  

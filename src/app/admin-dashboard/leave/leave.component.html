@@ -1,0 +1,54 @@
+<div class="container mt-5">
+  <h3>📝 Leave Requests</h3>
+
+  <div class="table-responsive shadow rounded-4">
+    <table class="table table-bordered table-hover align-middle">
+      <thead class="table-primary">
+        <tr>
+          <th>#</th>
+          <th>Employee Name</th>
+          <th>Reason</th>
+          <th>From Date</th>
+          <th>To Date</th>
+          <th>Status</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let leave of leaveRequests; let i = index">
+          <td>{{ i + 1 }}</td>
+          <td>{{ leave.employeeName }}</td>
+          <td>{{ leave.reason }}</td>
+          <td>{{ leave.fromDate | date }}</td>
+          <td>{{ leave.toDate | date }}</td>
+          <td>
+            <span class="badge bg-warning text-dark" *ngIf="leave.status === 'Pending'">Pending</span>
+            <span class="badge bg-success" *ngIf="leave.status === 'Approved'">Approved</span>
+            <span class="badge bg-danger" *ngIf="leave.status === 'Rejected'">Rejected</span>
+          </td>
+          <td>
+            <button class="btn btn-success btn-sm me-2"
+                    *ngIf="leave.status === 'Pending'" 
+                    (click)="handleLeaveAction(leave.id, 'Approved')">
+              Approve
+            </button>
+            <button class="btn btn-danger btn-sm" 
+                    *ngIf="leave.status === 'Pending'" 
+                    (click)="handleLeaveAction(leave.id, 'Rejected')">
+              Reject
+            </button>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- Toast/Notification -->
+<div *ngIf="notification" class="toast-container position-fixed bottom-0 end-0 p-3">
+  <div class="toast show bg-info text-white">
+    <div class="toast-body">
+      {{ notification }}
+    </div>
+  </div>
+</div>

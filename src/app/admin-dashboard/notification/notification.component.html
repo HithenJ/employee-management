@@ -1,0 +1,12 @@
+<div class="container mt-5">
+    <h3> Notifications</h3>
+    <ul *ngIf="notifications.length > 0; else noNotif">
+      <li *ngFor="let notif of notifications">
+        {{ notif.message }}
+        <button class="btn btn-success btn-sm ms-2" (click)="approveLeave(notif.leaveId)">Approve</button>
+        <button class="btn btn-danger btn-sm ms-2" (click)="rejectLeave(notif.leaveId)">Reject</button>
+      </li>
+    </ul>
+    <ng-template #noNotif><p>No notifications available.</p></ng-template>
+  </div>
+  

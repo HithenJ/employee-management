@@ -1,0 +1,7 @@
+<h2>🌴 Leaves</h2>
+<h2>Leaves</h2>
+<ul *ngIf="leaves.length > 0">
+  <li *ngFor="let leave of leaves">
+    From: {{ leave.start_date }} To: {{ leave.end_date }} - Status: {{ leave.status }}
+  </li>
+</ul>

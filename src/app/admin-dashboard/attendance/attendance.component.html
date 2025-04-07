@@ -1,0 +1,35 @@
+<div class="container mt-5">
+  <h2 class="mb-4">Mark Attendance</h2>
+
+  <!-- Success Alert -->
+  <div *ngIf="successMessage" class="alert alert-success alert-dismissible fade show" role="alert">
+    {{ successMessage }}
+    <button type="button" class="btn-close" (click)="successMessage=''"></button>
+  </div>
+
+  <form (ngSubmit)="markAttendance()" class="card p-4 shadow-lg rounded">
+    <div class="mb-3">
+      <label class="form-label">Employee Name</label>
+      <select class="form-select" [(ngModel)]="attendance.employeeId" name="employeeId" required>
+        <option value="">Select Employee</option>
+        <option *ngFor="let emp of employees" [value]="emp.id">{{ emp.name }}</option>
+      </select>
+    </div>
+
+    <div class="mb-3">
+      <label class="form-label">Date</label>
+      <input type="date" class="form-control" [(ngModel)]="attendance.date" name="date" required>
+    </div>
+
+    <div class="mb-3">
+      <label class="form-label">Status</label>
+      <select class="form-select" [(ngModel)]="attendance.status" name="status" required>
+        <option value="">Select Status</option>
+        <option value="Present">Present</option>
+        <option value="Absent">Absent</option>
+      </select>
+    </div>
+
+    <button type="submit" class="btn btn-primary w-100">Mark Attendance</button>
+  </form>
+</div>
