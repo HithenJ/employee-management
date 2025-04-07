@@ -23,19 +23,41 @@ USE `employee_db`;
 -- Dumping structure for table employee_db.employees
 DROP TABLE IF EXISTS `employees`;
 CREATE TABLE IF NOT EXISTS `employees` (
-  `id` int DEFAULT NULL,
+  `id` int NOT NULL AUTO_INCREMENT,
   `name` varchar(50) DEFAULT NULL,
   `email` varchar(50) DEFAULT NULL,
-  `phone` int DEFAULT NULL,
+  `phone` varchar(50) DEFAULT NULL,
   `department` varchar(50) DEFAULT NULL,
-  `salary` int DEFAULT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+  `salary` int DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `id` (`id`)
+) ENGINE=InnoDB AUTO_INCREMENT=10 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 -- Dumping data for table employee_db.employees: ~0 rows (approximately)
 INSERT INTO `employees` (`id`, `name`, `email`, `phone`, `department`, `salary`) VALUES
-	(NULL, 'kiran', 'kiran@gmail.com', 787878787, 'HR', 25000),
-	(NULL, 'kiran k', 'kiran@gmail.com', 787878787, 'HR', 25000),
-	(NULL, 'kiran kumar', 'kiran@gmail.com', 787878787, 'HR', 25000);
+	(1, 'kiran new', 'kiran@gmail.com', '787878787', 'HR', 25000),
+	(2, 'kiran 2', 'kiran@gmail.com', '787878787', 'HR', 25000);
+
+-- Dumping structure for table employee_db.leaves
+DROP TABLE IF EXISTS `leaves`;
+CREATE TABLE IF NOT EXISTS `leaves` (
+  `id` int NOT NULL AUTO_INCREMENT,
+  `employeeId` int NOT NULL,
+  `name` varchar(100) NOT NULL,
+  `reason` text NOT NULL,
+  `fromDate` date NOT NULL,
+  `toDate` date NOT NULL,
+  `status` enum('Pending','Approved','Rejected') DEFAULT 'Pending',
+  `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  KEY `employeeId` (`employeeId`),
+  CONSTRAINT `leaves_ibfk_1` FOREIGN KEY (`employeeId`) REFERENCES `employees` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+
+-- Dumping data for table employee_db.leaves: ~0 rows (approximately)
+INSERT INTO `leaves` (`id`, `employeeId`, `name`, `reason`, `fromDate`, `toDate`, `status`, `created_at`, `updated_at`) VALUES
+	(1, 1, 'kiran new', 'fever', '2025-04-08', '2025-04-12', 'Approved', '2025-04-07 14:39:00', '2025-04-07 14:39:21');
 
 /*!40103 SET TIME_ZONE=IFNULL(@OLD_TIME_ZONE, 'system') */;
 /*!40101 SET SQL_MODE=IFNULL(@OLD_SQL_MODE, '') */;
