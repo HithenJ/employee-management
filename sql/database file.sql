@@ -67,7 +67,7 @@ INSERT INTO `attendance` (`id`, `employeeId`, `date`, `status`) VALUES
 	(20, 1, '2025-04-13', 'Present'),
 	(21, 1, '2025-04-14', 'Absent'),
 	(22, 23, '2025-04-17', 'Present'),
-	(23, 23, '2025-04-16', 'Absent'),
+	(23, 23, '2055-04-16', 'Absent'),
 	(24, 1, '2025-04-16', 'Present'),
 	(25, 1, '2025-04-30', 'Absent'),
 	(26, 18, '2025-05-01', 'Leave'),
