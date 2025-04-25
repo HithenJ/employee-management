@@ -1,35 +1,93 @@
-<div class="d-flex" style="min-height: 100vh;">
-
-    <!-- Sidebar -->
-    <div class="bg-dark text-white p-3" style="width: 250px;">
-      <h4 class="text-center mb-4">Admin Panel</h4>
-      <ul class="nav flex-column">
-        <li class="nav-item mb-2">
-          <a class="nav-link text-white" routerLink="employees" routerLinkActive="active">Employee Management</a>
-        </li>
-        <li class="nav-item">
-            <a routerLink="/admin-dashboard/employee-form" class="nav-link text-white">Add Employee</a>
-          </li>
-        <li class="nav-item mb-2">
-          <a class="nav-link text-white" routerLink="attendance" routerLinkActive="active">Attendance</a>
-        </li>
-        <li class="nav-item mb-2">
-          <a class="nav-link text-white" routerLink="leave" routerLinkActive="active">Leave Management</a>
-        </li>
-        <li class="nav-item mb-2">
-          <a class="nav-link text-white" routerLink="notifications" routerLinkActive="active">Notifications</a>
-        </li>
-        <li class="nav-item mt-4">
-          <button class="btn btn-danger w-100" (click)="logout()">Logout</button>
-        </li>
-      </ul>
-    </div>
-  
-    <!-- Main Content -->
-    <div class="flex-grow-1 p-4">
-      <h3>Welcome, Admin!</h3>
-      <router-outlet></router-outlet>
-    </div>
-  
+<!-- Top Navbar -->
+<nav class="navbar navbar-expand-lg navbar-dark bg-dark px-4 shadow-sm">
+  <div class="d-flex align-items-center">
+    <img src="../../assets/Ems-sem-fundo-logo.png" alt="Logo" style="width: 50px; height: 50px;" class="me-3">
+    <span class="navbar-brand mb-0 h5 text-white">Admin Dashboard</span>
   </div>
-  
+  <div class="ms-auto text-white fw-semibold">
+    Welcome, {{ adminName }} <!-- Display admin's name -->
+  </div>
+</nav>
+
+<!-- Main Layout -->
+<div class="d-flex" style="min-height: calc(100vh - 56px); font-family: 'Segoe UI', sans-serif; background-color: #f4f6f9;">
+
+  <!-- Sidebar -->
+  <div class="bg-light text-dark p-3 shadow" style="width: 260px; border-top-right-radius: 10px; border-bottom-right-radius: 10px;">
+    <ul class="nav flex-column">
+      <!-- Employee Management -->
+      <li class="nav-item mb-2">
+        <a class="nav-link text-dark" routerLink="employees" routerLinkActive="active"
+           [ngClass]="{ 'bg-info rounded px-2': router.isActive('admin-dashboard/employees', false) }">
+          <i class="fas fa-users me-2"></i> Employee Management
+        </a>
+      </li>
+      <!-- Add Employee -->
+      <li class="nav-item mb-2">
+        <a class="nav-link text-dark" routerLink="/admin-dashboard/employee-form" routerLinkActive="active"
+           [ngClass]="{ 'bg-info rounded px-2': router.isActive('admin-dashboard/employee-form', false) }">
+          <i class="fas fa-user-plus me-2"></i> Add Employee
+        </a>
+      </li>
+      <!-- Attendance -->
+      <li class="nav-item mb-2">
+        <a class="nav-link text-dark" routerLink="attendance" routerLinkActive="active"
+           [ngClass]="{ 'bg-info rounded px-2': router.isActive('admin-dashboard/attendance', false) }">
+          <i class="fas fa-calendar-check me-2"></i> Attendance
+        </a>
+      </li>
+      
+      <!-- Leave Management -->
+      <li class="nav-item mb-2 position-relative">
+        <a class="nav-link text-dark d-flex justify-content-between align-items-center"
+           routerLink="leave"
+           routerLinkActive="active"
+           [ngClass]="{ 'bg-info rounded px-2': router.isActive('admin-dashboard/leave', false) }">
+          <span><i class="fas fa-clipboard-list me-2"></i> Leave Management</span>
+          <!-- Notification Badge for Unread Leave Requests -->
+          <span *ngIf="unreadLeaveCount > 0" class="badge bg-danger ms-2">{{ unreadLeaveCount }}</span>
+        </a>
+      </li>
+      
+      <!-- Settings -->
+      <li class="nav-item mb-2">
+        <a class="nav-link text-dark" routerLink="settings" routerLinkActive="active"
+           [ngClass]="{ 'bg-info rounded px-2': router.isActive('admin-dashboard/settings', false) }">
+          <i class="fas fa-cog me-2"></i> Settings
+        </a>
+      </li>
+
+      <!-- Logout Button -->
+      <li class="nav-item mt-4">
+        <button class="btn btn-danger w-100 fw-bold" (click)="openLogoutModal()">
+          <i class="fas fa-sign-out-alt me-2"></i> Logout
+        </button>
+      </li>
+    </ul>
+  </div>
+
+  <!-- Main Content -->
+  <div class="flex-grow-1 p-4" style="background-color: #ffffff; border-radius: 10px; margin: 10px; box-shadow: 0 0 15px rgba(0,0,0,0.1);">
+    <router-outlet></router-outlet>
+  </div>
+
+</div>
+
+<!-- Logout Confirmation Modal -->
+<div class="modal fade" id="logoutModal" tabindex="-1" aria-labelledby="logoutModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="logoutModalLabel">Confirm Logout</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        Are you sure you want to logout?
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+        <button type="button" class="btn btn-danger" (click)="confirmLogout()" data-bs-dismiss="modal">Logout</button>
+      </div>
+    </div>
+  </div>
+</div>

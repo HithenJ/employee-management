@@ -1,0 +1,103 @@
+<!-- Settings Content -->
+<div class="card shadow p-4 border-0 rounded-4 mt-4">
+  <h4 class="text-primary mb-4"><i class="bi bi-gear-fill me-2"></i> Settings</h4>
+
+  <!-- Change Password Option -->
+  <div class="mb-3">
+    <button class="btn btn-link text-primary" (click)="toggleChangePassword()">
+      <i class="bi bi-key me-2"></i> Change Password
+    </button>
+  </div>
+
+  <!-- Change Password Form -->
+  <div *ngIf="isChangePasswordVisible">
+    <form [formGroup]="settingsForm" (ngSubmit)="onSubmit()">
+
+      <!-- Current Password -->
+      <div class="mb-3">
+        <label for="currentPassword" class="form-label">Current Password</label>
+        <input type="password" class="form-control" id="currentPassword" formControlName="currentPassword" required>
+        <div *ngIf="settingsForm.controls['currentPassword'].invalid && settingsForm.controls['currentPassword'].touched" class="text-danger">
+          Current Password is required.
+        </div>
+      </div>
+
+      <!-- New Password -->
+      <div class="mb-3">
+        <label for="newPassword" class="form-label">New Password</label>
+        <input type="password" class="form-control" id="newPassword" formControlName="newPassword" required>
+        <div *ngIf="settingsForm.controls['newPassword'].invalid && settingsForm.controls['newPassword'].touched" class="text-danger">
+          New Password is required.
+        </div>
+      </div>
+
+      <!-- Confirm New Password -->
+      <div class="mb-3">
+        <label for="confirmNewPassword" class="form-label">Confirm New Password</label>
+        <input type="password" class="form-control" id="confirmNewPassword" formControlName="confirmNewPassword" required>
+        <div *ngIf="settingsForm.controls['confirmNewPassword'].invalid && settingsForm.controls['confirmNewPassword'].touched" class="text-danger">
+          Confirm New Password is required.
+        </div>
+        <div *ngIf="settingsForm.controls['confirmNewPassword'].value !== settingsForm.controls['newPassword'].value && settingsForm.controls['confirmNewPassword'].touched" class="text-danger">
+          Passwords do not match.
+        </div>
+      </div>
+
+      <!-- Save Button -->
+      <div class="d-flex justify-content-end">
+        <button type="submit" class="btn btn-primary" [disabled]="settingsForm.invalid">
+          Save Settings
+        </button>
+      </div>
+    </form>
+  </div>
+
+  <!-- Divider -->
+  <hr class="my-4" />
+
+  <!-- Activity Log Button -->
+  <div>
+    <button class="btn btn-link text-secondary" (click)="toggleActivityLog()">
+      <i class="bi bi-clock-history me-2"></i> Activity Log
+    </button>
+  </div>
+
+  <!-- Activity Log -->
+  <div *ngIf="showActivityLog">
+    <h5 class="text-secondary"><i class="bi bi-clock-history me-2"></i> Activity Log</h5>
+    <ul class="list-group mb-4">
+      <li class="list-group-item">
+        <strong>Account Created:</strong> {{ userMetadata.creationTime | date: 'dd MMM yyyy, h:mm a' }}
+      </li>
+      <li class="list-group-item">
+        <strong>Last Sign-In:</strong> {{ userMetadata.lastSignInTime | date: 'dd MMM yyyy, h:mm a' }}
+      </li>
+    </ul>
+  </div>
+
+  <!-- Password Change Log Button -->
+  <div>
+    <button class="btn btn-link text-secondary" (click)="togglePasswordChangeLog()">
+      <i class="bi bi-key me-2"></i> Password Change Log
+    </button>
+  </div>
+
+  <!-- Password Change Log -->
+  <div *ngIf="showPasswordChangeLog">
+    <h5 class="text-secondary"><i class="bi bi-key me-2"></i> Password Change Log</h5>
+    <ul class="list-group mb-4">
+      <li class="list-group-item" *ngFor="let log of passwordChangeLog">
+        {{ log.timestamp | date: 'dd MMM yyyy, h:mm a' }} - {{ log.changeReason }}
+      </li>
+    </ul>
+  </div>
+
+  <hr class="my-4" />
+
+  <!-- App Version Info -->
+  <div>
+    <h5 class="text-secondary"><i class="bi bi-info-circle me-2"></i> App Version</h5>
+    <p class="mb-0">Version: <strong>{{ appVersion }}</strong></p>
+    <p class="text-muted">Last Updated: {{ lastUpdated }}</p>
+  </div>
+</div>

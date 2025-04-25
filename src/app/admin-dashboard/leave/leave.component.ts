@@ -49,21 +49,18 @@ export class LeaveComponent implements OnInit {
 
     this.leaveService.updateLeaveStatus(id, status).subscribe({
       next: () => {
-        // Send Notification to Employee
+        this.leaveService.notifyLeaveUpdated(); 
+    
         this.notificationService.sendLeaveNotification(employeeId, fromDate, toDate, status.toLowerCase() as 'approved' | 'rejected')
           .then(() => console.log("Notification sent successfully"))
           .catch(err => console.error("Error sending notification", err));
-
+    
         this.notification = `✅ ${empName}'s request ${status}`;
         this.fetchLeaveRequests();
         this.actionInProgress = null;
-
+    
         setTimeout(() => this.notification = null, 3000);
       },
-      error: (err: any) => {
-        console.error(`Error updating leave status to ${status}`, err);
-        this.actionInProgress = null;
-      }
     });
   }
 }

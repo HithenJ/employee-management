@@ -14,7 +14,7 @@ import { ActivatedRoute } from '@angular/router';
     </ul>
   `
 })
-export class AttendanceComponent implements OnInit {
+export class AttendanceEComponent implements OnInit {
   attendanceRecords: any[] = [];
   employeeId: string = '';
 

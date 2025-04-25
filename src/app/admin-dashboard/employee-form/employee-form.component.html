@@ -1,36 +1,52 @@
-<div class="container mt-5">
-    <h3 *ngIf="!employee?.id">Add New Employee</h3>
-    <h3 *ngIf="employee?.id">Edit Employee</h3>
-    <form [formGroup]="employeeForm" (ngSubmit)="onSubmit()">
+<div class="container mt-4">
+  <h3 class="mb-4 text-primary">{{ isEditMode ? 'Edit Employee' : 'Add New Employee' }}</h3>
 
-      <div class="mb-3">
-        <label for="name" class="form-label">Full Name</label>
-        <input type="text" id="name" formControlName="name" class="form-control" placeholder="Enter full name">
+  <form [formGroup]="employeeForm" (ngSubmit)="onSubmit()">
+    <div class="row g-3">
+      <div class="col-md-6">
+        <label class="form-label">Full Name</label>
+        <input formControlName="name" class="form-control" placeholder="Enter name" />
       </div>
 
-      <div class="mb-3">
-        <label for="email" class="form-label">Email</label>
-        <input type="email" id="email" formControlName="email" class="form-control" placeholder="Enter email">
+      <div class="col-md-6">
+        <label class="form-label">Email</label>
+        <input type="email" formControlName="email" class="form-control" placeholder="Enter email" />
       </div>
 
-      <div class="mb-3">
-        <label for="phone" class="form-label">Phone</label>
-        <input type="text" id="phone" formControlName="phone" class="form-control" placeholder="Enter phone number">
+      <div class="col-md-6">
+        <label class="form-label">Phone</label>
+        <input type="text" formControlName="phone" class="form-control" placeholder="Enter phone" />
+      </div>
+      <div class="col-md-6">
+        <label class="form-label">Role</label>
+        <select formControlName="role" class="form-select">
+          <option value="employee">Employee</option>
+          <option value="admin">Admin</option>
+        </select>
+      </div>
+      
+      <div class="col-md-6">
+        <label class="form-label">Department</label>
+        <input type="text" formControlName="department" class="form-control" placeholder="Enter department" />
       </div>
 
-      <div class="mb-3">
-        <label for="department" class="form-label">Department</label>
-        <input type="text" id="department" formControlName="department" class="form-control" placeholder="Enter department">
-      </div>
 
-     
-      <div class="mb-3">
-        <label for="salary" class="form-label">Salary</label>
-        <input type="number" id="salary" formControlName="salary" class="form-control" placeholder="Enter salary">
+      <div class="col-md-6">
+        <label class="form-label">Salary</label>
+        <input type="number" formControlName="salary" class="form-control" placeholder="Enter salary" />
       </div>
+    </div>
 
-      <button type="submit" class="btn btn-primary">
-        {{ employee?.id ? 'Update' : 'Add' }} Employee
+    <div class="mt-4 d-flex justify-content-start">
+      <button type="submit" class="btn btn-primary me-2">
+        {{ isEditMode ? 'Update' : 'Add' }} Employee
       </button>
-    </form>
+      <button type="button" class="btn btn-secondary" (click)="cancel()">Cancel</button>
+    </div>
+
+    <!-- Success Message -->
+    <div *ngIf="successMessage" class="alert alert-success mt-3" role="alert">
+      {{ successMessage }}
+    </div>
+  </form>
 </div>

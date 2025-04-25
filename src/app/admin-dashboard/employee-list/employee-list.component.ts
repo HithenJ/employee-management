@@ -9,13 +9,20 @@ export class EmployeeListComponent implements OnInit {
   employees: any[] = [];
   showForm = false;
   selectedEmployee: any = null;
-
+  searchText:string='';
+  selectedDepartment: string = '';
+  currentUserName: string = '';
   constructor(private employeeService: EmployeeService) {}
 
   ngOnInit(): void {
     this.getEmployees();
+  
+    const user = localStorage.getItem('currentUser');
+    if (user) {
+      const parsedUser = JSON.parse(user);
+      this.currentUserName = parsedUser.name || parsedUser.email; // fallback to email if name missing
+    }
   }
-
   getEmployees(): void {
     this.employeeService.getAll().subscribe(data => {
       this.employees = data;
@@ -39,17 +46,36 @@ export class EmployeeListComponent implements OnInit {
   }
   
   editEmployee(employee: any): void {
-    this.selectedEmployee = employee;
+    this.selectedEmployee = { ...employee }; // shallow copy to trigger change detection
     this.showForm = true;
   }
-
+  
   addNew(): void {
     this.selectedEmployee = null;
     this.showForm = true;
   }
+  
 
   onFormClosed(): void {
     this.showForm = false;
     this.getEmployees();
   }
+  filteredEmployees() {
+    return this.employees.filter(emp => {
+      const isNotAdmin = emp.role !== 'admin'; // 💡 Hide admin
+      const matchSearch =
+        !this.searchText ||
+        emp.name.toLowerCase().includes(this.searchText.toLowerCase()) ||
+        emp.email.toLowerCase().includes(this.searchText.toLowerCase()) ||
+        emp.phone.includes(this.searchText) ||
+        emp.department.toLowerCase().includes(this.searchText.toLowerCase());
+  
+      const matchDept =
+        !this.selectedDepartment || emp.department === this.selectedDepartment;
+  
+      return isNotAdmin && matchSearch && matchDept;
+    });
+  }
+  
+
 }

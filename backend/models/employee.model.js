@@ -7,6 +7,8 @@ const Employee = function(employee) {
     this.phone = employee.phone;
     this.department = employee.department;
     this.salary = employee.salary;
+    this.salary = employee.role;
+
 };
 
 Employee.create = (newEmployee, result) => {

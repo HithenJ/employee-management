@@ -1,6 +1,7 @@
+// attendance.component.ts
 import { Component, OnInit } from '@angular/core';
 import { AttendanceService } from '../../services/attendance.service';
-import { EmployeeService } from '../../services/employee.service'; // import employee service
+import { EmployeeService } from '../../services/employee.service';
 
 @Component({
   selector: 'app-attendance',
@@ -8,47 +9,60 @@ import { EmployeeService } from '../../services/employee.service'; // import emp
   styleUrls: ['./attendance.component.css']
 })
 export class AttendanceComponent implements OnInit {
-  attendance = { employeeId: '', date: '', status: '' };
+  attendance = {
+    employeeId: '',
+    date: '',
+    status: ''
+  };
+
   employees: any[] = [];
+  attendanceList: any[] = [];
+
   successMessage = '';
+  errorMessage = '';
+  showModal = false;
 
   constructor(
     private attendanceService: AttendanceService,
-    private employeeService: EmployeeService // inject employee service
+    private employeeService: EmployeeService
   ) {}
 
   ngOnInit(): void {
     this.loadEmployees();
+    this.loadAttendance();
   }
 
-  loadEmployees() {
-    this.employeeService.getAll().subscribe((data: any) => {
-      this.employees = data;
+  loadEmployees(): void {
+    this.employeeService.getAll().subscribe({
+      next: (data) => {
+        this.employees = data;
+      },
+      error: () => this.errorMessage = 'Failed to load employees'
     });
   }
-  markAttendance() {
+
+  loadAttendance(): void {
+    this.attendanceService.getAll().subscribe({
+      next: (data) => {
+        this.attendanceList = data;
+      },
+      error: () => this.errorMessage = 'Failed to load attendance'
+    });
+  }
+
+  markAttendance(): void {
     this.attendanceService.create(this.attendance).subscribe({
       next: () => {
-        // After marking attendance, also update employee status
-        this.attendanceService.updateEmployeeStatus(+this.attendance.employeeId, this.attendance.status).subscribe({
-          next: () => {
-            this.successMessage = 'Attendance marked successfully and status updated!';
-            this.attendance = { employeeId: '', date: '', status: '' };
-            // Auto-hide after 5 seconds
-            setTimeout(() => {
-              this.successMessage = '';
-            }, 5000);
-          },
-          error: (err) => {
-            console.error('Error updating employee status:', err);
-          }
-        });
+        this.successMessage = 'Attendance marked successfully!';
+        this.attendance = { employeeId: '', date: '', status: '' };
+        this.loadAttendance();
+        setTimeout(() => this.successMessage = '', 4000);
       },
-      error: (err) => {
-        console.error('Error marking attendance:', err);
+      error: () => {
+        this.errorMessage = 'Failed to mark attendance';
+        setTimeout(() => this.errorMessage = '', 4000);
       }
     });
   }
-  
   
 }

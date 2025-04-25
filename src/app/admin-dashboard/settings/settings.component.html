@@ -1,0 +1,120 @@
+<div class="card mb-4 border-0 shadow-sm rounded-4">
+
+  <!-- Profile Information Panel -->
+  <div class="card-header bg-white d-flex justify-content-between align-items-center border-bottom">
+    <h5 class="mb-0 text-primary"><i class="fas fa-user-circle me-2"></i>Profile Information</h5>
+    <button class="btn btn-sm btn-outline-secondary" (click)="isProfileSectionVisible = !isProfileSectionVisible"
+            [attr.aria-expanded]="isProfileSectionVisible"
+            data-bs-toggle="collapse" data-bs-target="#profileInfo"
+            aria-controls="profileInfo">
+      <i class="fas" [ngClass]="isProfileSectionVisible ? 'fa-chevron-up' : 'fa-chevron-down'"></i>
+    </button>
+  </div>
+
+  <div id="profileInfo" class="collapse" [ngClass]="{ 'show': isProfileSectionVisible }">
+    <div class="card-body">
+      <form [formGroup]="profileForm" (ngSubmit)="onProfileSubmit()">
+        <div class="row g-3">
+          <div class="col-md-6">
+            <label for="adminName" class="form-label">Admin Name</label>
+            <input type="text" id="adminName" formControlName="adminName" class="form-control" />
+          </div>
+
+          <div class="col-md-6">
+            <label for="adminEmail" class="form-label">Email</label>
+            <input type="email" id="adminEmail" formControlName="adminEmail" class="form-control" [readonly]="true" />
+          </div>
+
+          <div class="col-md-12">
+            <label for="profilePic" class="form-label">Profile Picture</label>
+            <input type="file" id="profilePic" (change)="onFileChange($event)" class="form-control" />
+            <div *ngIf="profilePicUrl" class="mt-3">
+              <img [src]="profilePicUrl" alt="Profile Picture" class="rounded-circle shadow-sm border" style="width: 100px; height: 100px; object-fit: cover;" />
+            </div>
+          </div>
+        </div>
+
+        <div class="mt-4 text-end">
+          <button type="submit" class="btn btn-primary px-4" [disabled]="profileForm.invalid">Save Changes</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Change Password Panel -->
+  <div class="card-header bg-white d-flex justify-content-between align-items-center border-top border-bottom">
+    <h5 class="mb-0 text-primary"><i class="fas fa-key me-2"></i>Change Password</h5>
+    <button class="btn btn-sm btn-outline-secondary" (click)="isPasswordSectionVisible = !isPasswordSectionVisible"
+            [attr.aria-expanded]="isPasswordSectionVisible"
+            data-bs-toggle="collapse" data-bs-target="#changePassword"
+            aria-controls="changePassword">
+      <i class="fas" [ngClass]="isPasswordSectionVisible ? 'fa-chevron-up' : 'fa-chevron-down'"></i>
+    </button>
+  </div>
+
+  <div id="changePassword" class="collapse" [ngClass]="{ 'show': isPasswordSectionVisible }">
+    <div class="card-body">
+      <form [formGroup]="changePasswordForm" (ngSubmit)="onChangePassword()">
+        <div class="row g-3">
+          <div class="col-md-4">
+            <label for="currentPassword" class="form-label">Current Password</label>
+            <input type="password" id="currentPassword" formControlName="currentPassword" class="form-control" />
+          </div>
+          <div class="col-md-4">
+            <label for="newPassword" class="form-label">New Password</label>
+            <input type="password" id="newPassword" formControlName="newPassword" class="form-control" />
+          </div>
+          <div class="col-md-4">
+            <label for="confirmPassword" class="form-label">Confirm New Password</label>
+            <input type="password" id="confirmPassword" formControlName="confirmPassword" class="form-control" />
+          </div>
+        </div>
+
+        <div class="mt-3">
+          <div *ngIf="passwordError" class="text-danger small">{{ passwordError }}</div>
+          <div *ngIf="passwordSuccess" class="text-success small">{{ passwordSuccess }}</div>
+        </div>
+
+        <div class="mt-4 text-end">
+          <button type="submit" class="btn btn-primary px-4" [disabled]="changePasswordForm.invalid">Update Password</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Application Settings Panel -->
+  <div class="card-header bg-white d-flex justify-content-between align-items-center border-top border-bottom">
+    <h5 class="mb-0 text-primary"><i class="fas fa-cog me-2"></i>Application Settings</h5>
+    <button class="btn btn-sm btn-outline-secondary" (click)="isAppSettingsSectionVisible = !isAppSettingsSectionVisible"
+            [attr.aria-expanded]="isAppSettingsSectionVisible"
+            data-bs-toggle="collapse" data-bs-target="#appSettings"
+            aria-controls="appSettings">
+      <i class="fas" [ngClass]="isAppSettingsSectionVisible ? 'fa-chevron-up' : 'fa-chevron-down'"></i>
+    </button>
+  </div>
+
+  <div id="appSettings" class="collapse" [ngClass]="{ 'show': isAppSettingsSectionVisible }">
+    <div class="card-body">
+      <form [formGroup]="appSettingsForm" (ngSubmit)="onAppSettingsSubmit()">
+        <div class="row g-3">
+          <div class="col-md-6">
+            <label for="appVersion" class="form-label">App Version</label>
+            <input type="text" id="appVersion" class="form-control" [value]="appVersion" readonly />
+          </div>
+
+          <div class="col-md-6 align-self-center">
+            <label class="form-label">Dark Mode</label>
+            <div class="form-check form-switch mt-2">
+              <input class="form-check-input" type="checkbox" id="darkMode" formControlName="darkMode" (change)="toggleDarkMode($event)">
+              <label class="form-check-label" for="darkMode">Enable</label>
+            </div>
+          </div>
+        </div>
+
+        <div class="mt-4 text-end">
+          <button type="submit" class="btn btn-primary px-4" [disabled]="appSettingsForm.invalid">Save Settings</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>

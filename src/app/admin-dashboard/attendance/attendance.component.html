@@ -1,35 +1,87 @@
-<div class="container mt-5">
-  <h2 class="mb-4">Mark Attendance</h2>
-
-  <!-- Success Alert -->
-  <div *ngIf="successMessage" class="alert alert-success alert-dismissible fade show" role="alert">
-    {{ successMessage }}
-    <button type="button" class="btn-close" (click)="successMessage=''"></button>
+<!-- attendance.component.html -->
+<div class="container mt-4">
+  <h2 class="mb-4 text-primary">Mark Attendance</h2>
+  <div class="text-end">
+    <button class="btn btn-outline-primary" (click)="showModal = true">
+      View Attendance Records
+    </button>
   </div>
+  <div *ngIf="successMessage" class="alert alert-success">{{ successMessage }}</div>
+  <div *ngIf="errorMessage" class="alert alert-danger">{{ errorMessage }}</div>
 
-  <form (ngSubmit)="markAttendance()" class="card p-4 shadow-lg rounded">
-    <div class="mb-3">
-      <label class="form-label">Employee Name</label>
-      <select class="form-select" [(ngModel)]="attendance.employeeId" name="employeeId" required>
-        <option value="">Select Employee</option>
+  <form (ngSubmit)="markAttendance()" class="row g-3 mb-4">
+    <div class="col-md-4">
+      <label for="employee" class="form-label">Employee</label>
+      <select [(ngModel)]="attendance.employeeId" name="employeeId" id="employee" required class="form-select">
+        <option value="" disabled>Select Employee</option>
         <option *ngFor="let emp of employees" [value]="emp.id">{{ emp.name }}</option>
       </select>
     </div>
-
-    <div class="mb-3">
-      <label class="form-label">Date</label>
-      <input type="date" class="form-control" [(ngModel)]="attendance.date" name="date" required>
+  
+    <div class="col-md-4">
+      <label for="date" class="form-label">Date</label>
+      <input type="date" [(ngModel)]="attendance.date" name="date" id="date" required class="form-control" />
     </div>
-
-    <div class="mb-3">
-      <label class="form-label">Status</label>
-      <select class="form-select" [(ngModel)]="attendance.status" name="status" required>
-        <option value="">Select Status</option>
+  
+    <div class="col-md-4">
+      <label for="status" class="form-label">Status</label>
+      <select [(ngModel)]="attendance.status" name="status" id="status" required class="form-select">
+        <option value="" disabled>Select Status</option>
         <option value="Present">Present</option>
         <option value="Absent">Absent</option>
+        <option value="Leave">Leave</option>
       </select>
     </div>
-
-    <button type="submit" class="btn btn-primary w-100">Mark Attendance</button>
+  
+    <div class="col-12">
+      <button type="submit" class="btn btn-success w-100">Mark Attendance</button>
+    </div>
   </form>
+  
+ 
+
+  <!-- Modal -->
+  <div class="modal fade show d-block" *ngIf="showModal" style="background: rgba(0,0,0,0.4);">
+    <div class="modal-dialog modal-lg">
+      <div class="modal-content shadow">
+        <div class="modal-header bg-primary text-white">
+          <h5 class="modal-title">Attendance Records</h5>
+          <button type="button" class="btn-close btn-close-white" (click)="showModal = false"></button>
+        </div>
+        <div class="modal-body">
+          <div class="table-responsive">
+            <table class="table table-bordered table-hover table-striped table-sm align-middle text-center">
+              <thead class="table-dark">
+                <tr>
+                  <th>#</th>
+                  <th>Employee Name</th>
+                  <th>Date</th>
+                  <th>Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr *ngFor="let record of attendanceList; let i = index">
+                  <td>{{ i + 1 }}</td>
+                  <td>{{ record.employeeName }}</td>
+                  <td>{{ record.date | date: 'mediumDate' }}</td>
+                  <td>
+                    <span [ngClass]="{
+                      'badge bg-success': record.status === 'Present',
+                      'badge bg-danger': record.status === 'Absent',
+                      'badge bg-warning text-dark': record.status === 'Leave'
+                    }">
+                      {{ record.status }}
+                    </span>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button class="btn btn-secondary" (click)="showModal = false">Close</button>
+        </div>
+      </div>
+    </div>
+  </div>
 </div>

@@ -8,6 +8,7 @@
   <li *ngFor="let n of notifications">
     <strong>{{ n.message }}</strong> 
     <br>
-    <small>{{ n.date | date: 'short' }}</small>
+    <small>{{ n.date | date: 'medium' }}</small>
+
   </li>
 </ul>
