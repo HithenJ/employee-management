@@ -11,4 +11,22 @@
     background-color: rgba(255, 255, 255, 0.1);
     transition: background-color 0.3s ease;
   }
-  
+  .sidebar {
+  width: 260px;
+  transition: width 0.3s;
+}
+
+.sidebar.collapsed {
+  width: 60px;
+  overflow-x: hidden;
+}
+
+.sidebar.collapsed .nav-link span,
+.sidebar.collapsed button span,
+.sidebar.collapsed .badge {
+  display: none;
+}
+
+.sidebar .nav-link i {
+  font-size: 1.2rem;
+}

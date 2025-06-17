@@ -1,4 +1,4 @@
-import { Component } from '@angular/core';
+import { Component, OnInit, OnDestroy } from '@angular/core';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { HttpClient } from '@angular/common/http';
 import { AngularFireAuth } from '@angular/fire/compat/auth';
@@ -8,11 +8,13 @@ import { Router } from '@angular/router';
   selector: 'app-login',
   templateUrl: './login.component.html',
 })
-export class LoginComponent {
+export class LoginComponent implements OnInit, OnDestroy {
   loginForm: FormGroup;
   isLoggingIn = false;
   showPassword = false;
   isAdminLogin = false;
+  loginError = '';
+  isOnline = navigator.onLine;
 
   constructor(
     private fb: FormBuilder,
@@ -26,19 +28,34 @@ export class LoginComponent {
     });
   }
 
-  togglePasswordVisibility() {
-    this.showPassword = !this.showPassword;
-  }
-
   ngOnInit() {
+    // Auto redirect if already logged in
     const adminData = sessionStorage.getItem('adminData');
-    const employeeData = sessionStorage.getItem('employeeData');
+    const employeeData = sessionStorage.getItem('userData');
 
     if (adminData && this.router.url !== '/admin-dashboard') {
       this.router.navigate(['/admin-dashboard']);
     } else if (employeeData && this.router.url !== '/employee-dashboard') {
       this.router.navigate(['/employee-dashboard']);
     }
+
+    // Listen to internet connection changes
+    window.addEventListener('online', this.updateOnlineStatus);
+    window.addEventListener('offline', this.updateOnlineStatus);
+  }
+
+  ngOnDestroy() {
+    // Remove event listeners on component destroy
+    window.removeEventListener('online', this.updateOnlineStatus);
+    window.removeEventListener('offline', this.updateOnlineStatus);
+  }
+
+  updateOnlineStatus = () => {
+    this.isOnline = navigator.onLine;
+  }
+
+  togglePasswordVisibility() {
+    this.showPassword = !this.showPassword;
   }
 
   toggleLoginRole() {
@@ -46,16 +63,22 @@ export class LoginComponent {
   }
 
   onLogin() {
-    if (this.loginForm.invalid) return;
-    this.isLoggingIn = true;
+    this.loginError = '';
 
+    if (this.loginForm.invalid) return;
+
+    if (!navigator.onLine) {
+      this.loginError = 'No Internet Connection. Please connect and try again.';
+      return;
+    }
+
+    this.isLoggingIn = true;
     const { email, password } = this.loginForm.value;
 
     this.afAuth.signInWithEmailAndPassword(email, password)
       .then((result) => {
         const loggedInEmail = result.user?.email;
 
-        // Fetch user data from your backend
         this.http.get<any>(`http://localhost:5000/api/employees/email/${loggedInEmail}`).subscribe({
           next: (res) => {
             const userData = {
@@ -63,8 +86,7 @@ export class LoginComponent {
               name: res.name,
               role: res.role
             };
-        
-            // Store based on role
+
             if (res.role === 'admin') {
               sessionStorage.setItem('adminData', JSON.stringify(userData));
               this.router.navigate(['/admin-dashboard']);
@@ -75,13 +97,15 @@ export class LoginComponent {
           },
           error: (err) => {
             console.error('Error fetching user data:', err);
-            alert('Something went wrong while fetching user info');
+            this.loginError = 'Could not fetch user details. Try again later.';
           }
         });
-        
       })
       .catch(err => {
-        alert('Invalid login: ' + err.message);
+        this.loginError = 'Login failed: ' + err.message;
+      })
+      .finally(() => {
+        this.isLoggingIn = false;
       });
   }
 }

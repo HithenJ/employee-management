@@ -36,7 +36,12 @@ export class AdminService {
   // Update admin profile
   updateAdminProfile(id: number | string, updatedData: any): Observable<any> {
     console.log('Updating admin profile with data:', updatedData);
-    return this.http.put(`${this.adminApiUrl}/${id}`, updatedData);
+    // The backend expects the image to be sent as a base64 string in the 'profilePic' field
+    return this.http.put(`${this.adminApiUrl}/${id}`, updatedData, {
+      headers: {
+        'Content-Type': 'application/json'
+      }
+    });
   }
 
   // Delete admin

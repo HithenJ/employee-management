@@ -1,46 +1,59 @@
 <div class="container-fluid d-flex justify-content-center align-items-center" style="min-height: 100vh; background: linear-gradient(to right, #e3f2fd, #ffffff);">
   <div class="card border-0 shadow-lg p-4 rounded-4" style="width: 100%; max-width: 420px;">
 
-    <!-- Logo -->
-    <div class="text-center mb-4">
-      <img src="../../assets/Ems-sem-fundo-logo.png" alt="Logo" class="img-fluid" style="width: 80px; height: 80px;">
+    <!-- ✅ Check internet connection -->
+    <div *ngIf="!isOnline" class="alert alert-danger text-center fw-semibold">
+      🚫 No Internet Connection. Please connect and retry.
     </div>
 
-    <!-- Title -->
-    <h4 class="text-center mb-2 fw-semibold" [ngClass]="isAdminLogin ? 'text-danger' : 'text-primary'">
-      {{ isAdminLogin ? 'Admin Login' : 'Employee Login' }}
-    </h4>
-
-    <!-- Role Switch -->
-    <div class="text-center mb-4">
-      <button class="btn btn-outline-secondary btn-sm rounded-pill px-4" (click)="toggleLoginRole()">
-        🔁 Switch to {{ isAdminLogin ? 'Employee' : 'Admin' }} Login
-      </button>
-    </div>
-
-    <!-- Login Form -->
-    <form [formGroup]="loginForm" (ngSubmit)="onLogin()">
-      <div class="form-floating mb-3">
-        <input type="email" formControlName="email" class="form-control rounded-3" id="emailInput" placeholder="Email">
-        <label for="emailInput">Email</label>
+    <!-- ✅ Show login only when online -->
+    <ng-container *ngIf="isOnline">
+      <!-- Logo -->
+      <div class="text-center mb-4">
+        <img src="../../assets/Ems-sem-fundo-logo.png" alt="Logo" class="img-fluid" style="width: 80px; height: 80px;">
       </div>
 
-      <div class="form-floating mb-4 position-relative">
-        <input [type]="showPassword ? 'text' : 'password'" formControlName="password" class="form-control rounded-3 pe-5" id="passwordInput" placeholder="Password">
-        <label for="passwordInput">Password</label>
-        <i class="bi" [ngClass]="showPassword ? 'bi-eye-slash' : 'bi-eye'" (click)="togglePasswordVisibility()"
-          style="position: absolute; top: 50%; right: 15px; transform: translateY(-50%); cursor: pointer;"></i>
+      <!-- Title -->
+      <h4 class="text-center mb-2 fw-semibold" [ngClass]="isAdminLogin ? 'text-danger' : 'text-primary'">
+        {{ isAdminLogin ? 'Admin Login' : 'Employee Login' }}
+      </h4>
+
+      <!-- Role Switch -->
+      <div class="text-center mb-4">
+        <button class="btn btn-outline-secondary btn-sm rounded-pill px-4" (click)="toggleLoginRole()">
+          🔁 Switch to {{ isAdminLogin ? 'Employee' : 'Admin' }} Login
+        </button>
       </div>
 
-      <button class="btn w-100 rounded-pill py-2"
-        [ngClass]="isAdminLogin ? 'btn-danger' : 'btn-primary'" [disabled]="isLoggingIn">
-        <ng-container *ngIf="!isLoggingIn">Login as {{ isAdminLogin ? 'Admin' : 'Employee' }}</ng-container>
-        <ng-container *ngIf="isLoggingIn">
-          <span class="spinner-border spinner-border-sm me-2" role="status"></span>
-          Logging in...
-        </ng-container>
-      </button>
-    </form>
+      <!-- Login Error -->
+      <div *ngIf="loginError" class="alert alert-warning text-center py-2">
+        {{ loginError }}
+      </div>
+
+      <!-- Login Form -->
+      <form [formGroup]="loginForm" (ngSubmit)="onLogin()">
+        <div class="form-floating mb-3">
+          <input type="email" formControlName="email" class="form-control rounded-3" id="emailInput" placeholder="Email">
+          <label for="emailInput">Email</label>
+        </div>
+
+        <div class="form-floating mb-4 position-relative">
+          <input [type]="showPassword ? 'text' : 'password'" formControlName="password" class="form-control rounded-3 pe-5" id="passwordInput" placeholder="Password">
+          <label for="passwordInput">Password</label>
+          <i class="bi" [ngClass]="showPassword ? 'bi-eye-slash' : 'bi-eye'" (click)="togglePasswordVisibility()"
+            style="position: absolute; top: 50%; right: 15px; transform: translateY(-50%); cursor: pointer;"></i>
+        </div>
+
+        <button class="btn w-100 rounded-pill py-2"
+          [ngClass]="isAdminLogin ? 'btn-danger' : 'btn-primary'" [disabled]="isLoggingIn">
+          <ng-container *ngIf="!isLoggingIn">Login as {{ isAdminLogin ? 'Admin' : 'Employee' }}</ng-container>
+          <ng-container *ngIf="isLoggingIn">
+            <span class="spinner-border spinner-border-sm me-2" role="status"></span>
+            Logging in...
+          </ng-container>
+        </button>
+      </form>
+    </ng-container>
 
   </div>
 </div>

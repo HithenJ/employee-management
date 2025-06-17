@@ -1,16 +1,18 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnDestroy, OnInit } from '@angular/core';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { AngularFireAuth } from '@angular/fire/compat/auth';
 import { AngularFireStorage } from '@angular/fire/compat/storage';
 import { AdminService } from 'src/app/services/admin.service';
-import { EmailAuthProvider, reauthenticateWithCredential, updatePassword } from 'firebase/auth';
+import { EmailAuthProvider } from 'firebase/auth';
+import { HttpClient } from '@angular/common/http';
+import { Subscription, take } from 'rxjs';
 
 @Component({
-  selector: 'app-setting',
+  selector: 'app-admin-settings',
   templateUrl: './settings.component.html',
   styleUrls: ['./settings.component.css']
 })
-export class SettingComponent implements OnInit {
+export class AdminSettingsComponent implements OnInit, OnDestroy {
 
   profileForm!: FormGroup;
   changePasswordForm!: FormGroup;
@@ -19,45 +21,51 @@ export class SettingComponent implements OnInit {
   adminEmail: string = '';
   adminId!: number;
   profilePicUrl: string | null = null;
-
+  isProfilePicSelected: boolean = false;
+  isProfilePicSaving: boolean = false;
+  profilePicSaveError: string = '';
+  profilePicSaveSuccess: string = '';
+  adminSubscription?: Subscription;
   passwordError: string = '';
   passwordSuccess: string = '';
 
-  isProfileSectionVisible: boolean = false;  // To toggle visibility of Profile Information
-  isPasswordSectionVisible: boolean = false;  // To toggle visibility of Change Password section
-  isAppSettingsSectionVisible: boolean = false;  // To toggle visibility of Application Settings section
+  isProfileSectionVisible: boolean = false;
+  isPasswordSectionVisible: boolean = false;
+  isAppSettingsSectionVisible: boolean = false;
 
-  appVersion: string = '1.0.0';  // Set a default app version
-  maintenanceMode: boolean = false;  // Default to false, can toggle this setting
-  enableRegistration: boolean = true;  // Default to true, enable registration
-  systemLogs: string = '';  // Placeholder for system logs (you can fetch these from a service)
-
-  darkMode: boolean = false;  // Default dark mode setting
+  appVersion: string = '1.0.0';
+  darkMode: boolean = false;
 
   constructor(
     private fb: FormBuilder,
     private afAuth: AngularFireAuth,
     private afStorage: AngularFireStorage,
-    private adminService: AdminService
-  ) {}
+    private adminService: AdminService,
+    private http: HttpClient
+  ) {
+    this.initializeForms();
+  }
 
   ngOnInit(): void {
-    this.initializeForms();
     this.loadAdminData();
-
-    // Load dark mode preference from local storage if set
     const storedDarkMode = localStorage.getItem('darkMode');
     if (storedDarkMode) {
       this.darkMode = JSON.parse(storedDarkMode);
-      document.body.classList.toggle('dark-mode', this.darkMode); // Apply dark mode class to body
+      document.body.classList.toggle('dark-mode', this.darkMode);
     }
   }
 
+  ngOnDestroy(): void {
+    this.adminSubscription?.unsubscribe();
+  }
+
   initializeForms(): void {
-    this.profileForm = this.fb.group({
-      adminName: ['', Validators.required],
-      adminEmail: [{ value: '', disabled: true }, [Validators.required, Validators.email]]
-    });
+this.profileForm = this.fb.group({
+  adminName: ['', Validators.required],
+  adminEmail: [{ value: '', disabled: true }, [Validators.required, Validators.email]],
+  adminPhone: [{ value: '', disabled: true }]
+});
+
 
     this.changePasswordForm = this.fb.group({
       currentPassword: ['', Validators.required],
@@ -65,148 +73,223 @@ export class SettingComponent implements OnInit {
       confirmPassword: ['', Validators.required]
     }, { validators: this.passwordMatchValidator });
 
-    // Initialize Application Settings form
     this.appSettingsForm = this.fb.group({
-      maintenanceMode: [this.maintenanceMode],
-      enableRegistration: [this.enableRegistration],
-      darkMode: [this.darkMode] // Add darkMode to the form group
+      darkMode: [this.darkMode]
     });
   }
 
   passwordMatchValidator(form: FormGroup) {
-    const newPassword = form.get('newPassword')?.value;
-    const confirmPassword = form.get('confirmPassword')?.value;
-    return newPassword === confirmPassword ? null : { mismatch: true };
+    return form.get('newPassword')?.value === form.get('confirmPassword')?.value ? null : { mismatch: true };
   }
 
   loadAdminData(): void {
-    this.afAuth.currentUser.then(user => {
+    this.adminSubscription = this.afAuth.authState.pipe(take(1)).subscribe(user => {
       if (user?.email) {
         this.adminEmail = user.email;
+        this.profileForm.patchValue({ adminEmail: this.adminEmail });
 
-        this.adminService.getAdminByEmail(this.adminEmail).subscribe(employee => {
-          if (employee) {
-            this.adminId = employee.id;
-            this.profilePicUrl = employee.profilePicUrl || null;
-            this.profileForm.patchValue({
-              adminName: employee.name,
-              adminEmail: this.adminEmail
-            });
+   this.adminService.getAdminByEmail(this.adminEmail).subscribe({
+  next: (admin) => {
+    if (admin) {
+      this.adminId = admin.id;
+      this.profilePicUrl = admin.profilePic?.startsWith('data:')
+        ? admin.profilePic
+        : `data:image/jpeg;base64,${admin.profilePic}`;
+
+      this.profileForm.patchValue({
+        adminName: admin.name,
+        adminPhone: admin.phone 
+      });
+    }
+  },
+
+          error: (error) => {
+            console.error('Error loading admin data:', error);
+            this.profilePicUrl = null;
           }
         });
       }
     });
+    }
+  
+
+  onFileSelected(event: Event) {
+    const input = event.target as HTMLInputElement;
+    if (input.files && input.files[0]) {
+      const file = input.files[0];
+      const reader = new FileReader();
+      reader.onload = (e: ProgressEvent<FileReader>) => {
+        const base64String = e.target?.result as string;
+        this.profilePicUrl = base64String;
+        this.isProfilePicSelected = true;
+        this.isProfilePicSaving = false;
+        this.profilePicSaveError = '';
+        this.profilePicSaveSuccess = '';
+
+        // Update admin data in sessionStorage with new profile pic
+        const adminData = JSON.parse(sessionStorage.getItem('adminData') || '{}');
+        sessionStorage.setItem('adminData', JSON.stringify({
+          ...adminData,
+          profilePic: base64String
+        }));
+      };
+      reader.readAsDataURL(file);
+    }
   }
 
-  onProfileSubmit(): void {
-    if (this.profileForm.valid && this.adminId) {
-      const updatedData = {
+  saveProfilePicture(): void {
+    if (!this.adminId || !this.profilePicUrl) {
+      this.profilePicSaveError = 'Please select a profile picture first';
+      setTimeout(() => {
+        this.profilePicSaveError = '';
+      }, 3000);
+      return;
+    }
+
+    this.isProfilePicSaving = true;
+    try {
+      const base64String = this.profilePicUrl.split(',')[1];
+      const formData = {
+        profilePic: base64String,
+        name: this.profileForm.get('adminName')?.value,
+        email: this.profileForm.get('adminEmail')?.value
+      };
+
+      this.adminService.updateAdminProfile(this.adminId, formData).subscribe({
+        next: () => {
+          this.profilePicSaveSuccess = 'Profile picture uploaded successfully!';
+          this.isProfilePicSaving = false;
+          setTimeout(() => {
+            this.profilePicSaveSuccess = '';
+          }, 3000);
+
+
+        },
+        error: (error) => {
+          this.profilePicSaveError = 'Error updating profile picture: ' + (error.message || 'Unknown error');
+          this.isProfilePicSaving = false;
+          setTimeout(() => {
+            this.profilePicSaveError = '';
+          }, 3000);
+        }
+      });
+    } catch (error) {
+      this.isProfilePicSaving = false;
+      this.profilePicSaveError = 'Error processing image: ' + (error instanceof Error ? error.message : 'Unknown error');
+      setTimeout(() => {
+        this.profilePicSaveError = '';
+      }, 3000);
+    }
+
+
+    try {
+      const base64String = this.profilePicUrl.split(',')[1];
+      const formData = {
+        profilePic: base64String,
         name: this.profileForm.get('adminName')?.value,
         email: this.adminEmail
       };
 
-      this.adminService.updateAdminProfile(this.adminId, updatedData).subscribe(() => {
-        alert('Profile updated successfully!');
+      this.adminService.updateAdminProfile(this.adminId, formData).subscribe({
+        next: () => {
+          this.isProfilePicSaving = false;
+          this.profilePicSaveSuccess = 'Profile picture updated successfully!';
+          this.isProfilePicSelected = false;
+          setTimeout(() => {
+            this.profilePicSaveSuccess = '';
+          }, 3000);
+        },
+        error: (err) => {
+          this.isProfilePicSaving = false;
+          this.profilePicSaveError = 'Error updating profile picture: ' + (err.error?.message || 'Unknown error');
+          setTimeout(() => {
+            this.profilePicSaveError = '';
+          }, 3000);
+        }
       });
+    } catch (error: unknown) {
+      this.isProfilePicSaving = false;
+      this.profilePicSaveError = 'Error processing image: ' + (error instanceof Error ? error.message : 'Unknown error');
+      setTimeout(() => {
+        this.profilePicSaveError = '';
+      }, 3000);
     }
   }
 
-  onFileChange(event: any): void {
-    const file: File = event.target.files[0];
-    if (file) {
-      this.uploadProfilePic(file);
-    }
-  }
+  onProfileSubmit(): void {
+    if (!this.profileForm.valid || !this.adminId) return;
 
-  uploadProfilePic(file: File): void {
-    const filePath = `profile_pics/${Date.now()}_${file.name}`;
-    const fileRef = this.afStorage.ref(filePath);
-    const task = this.afStorage.upload(filePath, file);
+    const updatedData = {
+      name: this.profileForm.get('adminName')?.value,
+      email: this.adminEmail
+    };
 
-    task.snapshotChanges().toPromise().then(() => {
-      fileRef.getDownloadURL().toPromise().then(downloadURL => {
-        this.updateProfilePic(downloadURL);
-      });
+    this.adminService.updateAdminProfile(this.adminId, updatedData).subscribe({
+      next: () => {
+        this.passwordSuccess = 'Profile updated successfully!';
+        setTimeout(() => {
+          this.passwordSuccess = '';
+        }, 3000);
+      },
+      error: () => {
+        this.passwordError = 'Error updating profile';
+        setTimeout(() => {
+          this.passwordError = '';
+        }, 3000);
+      }
     });
   }
 
-  updateProfilePic(downloadURL: string): void {
-    if (this.adminId) {
-      const updatedData = {
-        profilePicUrl: downloadURL
-      };
-
-      this.adminService.updateAdminProfile(this.adminId, updatedData).subscribe(() => {
-        this.profilePicUrl = downloadURL;
-        alert('Profile picture updated successfully!');
-      });
-    }
-  }
-
   onChangePassword(): void {
-    this.passwordError = '';
-    this.passwordSuccess = '';
-
-    if (this.changePasswordForm.invalid) {
-      this.passwordError = 'Please fill all fields correctly.';
-      return;
-    }
+    if (!this.changePasswordForm.valid || !this.adminId) return;
 
     const currentPassword = this.changePasswordForm.get('currentPassword')?.value;
     const newPassword = this.changePasswordForm.get('newPassword')?.value;
 
-    this.afAuth.currentUser.then(user => {
-      if (user && user.email) {
-        const credential = EmailAuthProvider.credential(user.email, currentPassword);
-
-        reauthenticateWithCredential(user, credential).then(() => {
-          updatePassword(user, newPassword).then(() => {
+    this.afAuth.authState.pipe(take(1)).subscribe(user => {
+      if (user) {
+        const credential = EmailAuthProvider.credential(user.email!, currentPassword);
+        user.reauthenticateWithCredential(credential).then(() => {
+          user.updatePassword(newPassword).then(() => {
             this.passwordSuccess = 'Password updated successfully!';
-            this.changePasswordForm.reset();
-          }).catch(error => {
-            this.passwordError = 'Failed to update password: ' + error.message;
+            setTimeout(() => {
+              this.passwordSuccess = '';
+              this.changePasswordForm.reset();
+            }, 3000);
+          }).catch(() => {
+            this.passwordError = 'Error updating password';
+            setTimeout(() => {
+              this.passwordError = '';
+            }, 3000);
           });
         }).catch(() => {
-          this.passwordError = 'Current password is incorrect.';
+          this.passwordError = 'Invalid current password';
+          setTimeout(() => {
+            this.passwordError = '';
+          }, 3000);
         });
       }
     });
   }
 
   onAppSettingsSubmit(): void {
-    if (this.appSettingsForm.valid) {
-      const settings = this.appSettingsForm.value;
-      this.maintenanceMode = settings.maintenanceMode;
-      this.enableRegistration = settings.enableRegistration;
-      this.darkMode = settings.darkMode;
+    if (!this.appSettingsForm.valid) return;
 
-      // Apply dark mode setting
-      document.body.classList.toggle('dark-mode', this.darkMode);
+    const settings = this.appSettingsForm.value;
+    localStorage.setItem('darkMode', JSON.stringify(settings.darkMode));
+    document.body.classList.toggle('dark-mode', settings.darkMode);
+    this.darkMode = settings.darkMode;
 
-      // Store dark mode preference in local storage
-      localStorage.setItem('darkMode', JSON.stringify(this.darkMode));
-
-      // You can save this data to your backend service or perform any other action needed
-      console.log('App Settings updated:', settings);
-      alert('Application settings updated!');
-    }
+    this.passwordSuccess = 'Settings updated successfully!';
+    setTimeout(() => {
+      this.passwordSuccess = '';
+    }, 3000);
   }
 
-  toggleProfileSection(): void {
-    this.isProfileSectionVisible = !this.isProfileSectionVisible;
+  toggleDarkMode(event: Event) {
+    const checkbox = event.target as HTMLInputElement;
+    this.darkMode = checkbox.checked;
+    this.appSettingsForm.patchValue({ darkMode: this.darkMode });
   }
 
-  togglePasswordSection(): void {
-    this.isPasswordSectionVisible = !this.isPasswordSectionVisible;
-  }
-
-  toggleAppSettingsSection(): void {
-    this.isAppSettingsSectionVisible = !this.isAppSettingsSectionVisible;
-  }
-
-  toggleDarkMode(event: any): void {
-    this.darkMode = event.target.checked;
-    document.body.classList.toggle('dark-mode', this.darkMode);  // Apply dark mode class to body
-    localStorage.setItem('darkMode', JSON.stringify(this.darkMode));  // Store dark mode preference in local storage
-  }
 }

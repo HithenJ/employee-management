@@ -1,23 +1,46 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, OnDestroy } from '@angular/core';
 import { EmployeeService } from '../services/employee.service';
-import { AngularFireAuth } from '@angular/fire/compat/auth'; // Ensure AngularFireAuth is correctly installed and imported
-import { Router } from '@angular/router';
+import { AngularFireAuth } from '@angular/fire/compat/auth';
+import { Router, ActivatedRoute } from '@angular/router';
 import { LeaveService } from '../services/leave.service';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { DatePipe } from '@angular/common';
-declare var bootstrap: any; // Ensure bootstrap is globally available or imported correctly
 import { NgbDate } from '@ng-bootstrap/ng-bootstrap';
+import { EmployeeSettingsComponent } from './settings/settings.component';
+declare var bootstrap: any; // Ensure bootstrap is globally available
 
+interface Employee {
+  id: number;
+  name: string;
+  email: string;
+  department?: string;
+  phone?: string;
+  dob?: string;
+  gender?: string;
+  address?: string;
+  profilePic?: string | ArrayBuffer | null;
+}
+
+interface Leave {
+  id?: number;
+  employeeId: number;
+  name: string;
+  reason: string;
+  fromDate: string;
+  toDate: string;
+  status?: string;
+}
 
 @Component({
   selector: 'app-employee-dashboard',
   templateUrl: './employee-dashboard.component.html',
-  styleUrls: ['./employee-dashboard.component.css']
+  styleUrls: ['./employee-dashboard.component.css'],
+  providers: [DatePipe]
 })
-export class EmployeeDashboardComponent implements OnInit {
+export class EmployeeDashboardComponent implements OnInit, OnDestroy {
   employeeId: number | null = null;
-  employee: any = {};
-  leaves: any[] = [];
+  employee: Employee = {} as Employee;
+  leaves: Leave[] = [];
   attendanceData: { date: string; status: string }[] = [];
   pendingLeaves = 0;
   notifications: { message: string; date: Date }[] = [];
@@ -33,11 +56,14 @@ export class EmployeeDashboardComponent implements OnInit {
   today = '';
   todayAttendanceStatus = 'Not Available';
   showAttendanceModal = false;
-  selectedSection: string = '';
-  hasPersonalDetails: boolean = false;
+  unreadNotificationCount = 0;
+  unreadLeaveCount = 0;
+
+  selectedSection = '';
+  hasPersonalDetails = false;
   disabledDates: NgbDate[] = [];
-  leaveCount: number = 0;
-  isSidebarOpen: boolean = true;
+  leaveCount = 0;
+  isSidebarOpen = true;
   personalDetails: any = {
     name: '',
     email: '',
@@ -52,85 +78,124 @@ export class EmployeeDashboardComponent implements OnInit {
   selectedFile: File | null = null;
   activeTab: 'profile' | 'attendance' | 'leave' | 'notifications' | 'settings' = 'profile';
 
+  private leaveStatusIntervalId: any;
+
   constructor(
     private employeeService: EmployeeService,
-    // Removed unused attendanceService
     private afAuth: AngularFireAuth,
     private router: Router,
+    private route: ActivatedRoute,
     private leaveService: LeaveService,
     private fb: FormBuilder,
     private datePipe: DatePipe
   ) {}
 
-  ngOnInit(): void {
-    this.today = new Date().toISOString().split('T')[0];
-  
-    this.editProfileForm = this.fb.group({
-      name: ['', Validators.required],
-      email: ['', [Validators.required, Validators.email]],
-      department: ['', Validators.required]
-    });
-  
-    // Restore active tab from localStorage
-    const storedTab = localStorage.getItem('activeEmployeeTab');
-    if (storedTab && ['profile', 'attendance', 'leave', 'notifications'].includes(storedTab)) {
-      this.activeTab = storedTab as any;
-    }
-  
-    // Use session storage for user info
-    const userData = JSON.parse(sessionStorage.getItem('userData') || '{}');
-  
-    if (!userData || userData.role !== 'employee') {
-      this.router.navigate(['/login']);
-      return;
-    }
-  
-    const email = userData.email;
-  
-    this.employeeService.getByEmail(email).subscribe({
-      next: data => {
-        this.employee = data;
-        this.employeeId = this.employee?.id;
-  
-        if (!this.employeeId) {
-          console.error('Employee ID not found!');
-          return;
-        }
-  
-        // Format DOB
-        if (this.employee?.dob) {
-          this.employee.dob = new Date(this.employee.dob).toISOString().split('T')[0];
-        }
-  
-        // Store personal details
-        this.personalDetails = {
-          ...this.employee,
-          dob: this.employee.dob || ''
-        };
-  
-        // ⚡ Start watching leave status for notifications immediately
-        this.watchLeaveStatus();
-  
-        // Continue loading dashboard data
-        this.initializeDashboard();
-  
-        // Load leave count (badge)
-        this.leaveService.getLeaveHistory(this.employeeId).subscribe(leaveHistory => {
-          this.leaveCount = leaveHistory?.length || 0;
-        });
-      },
-      error: err => {
-        console.error('Failed to load employee data', err);
-        this.loading = false;
-      }
-    });
-  }
-  
+ngOnInit(): void {
+  this.today = new Date().toISOString().split('T')[0];
 
-  setActiveTab(tab: 'profile' | 'attendance' | 'leave' | 'notifications') {
-    this.activeTab = tab;
-    localStorage.setItem('activeEmployeeTab', tab);
+  this.editProfileForm = this.fb.group({
+    name: ['', Validators.required],
+    email: ['', [Validators.required, Validators.email]],
+    department: ['', Validators.required]
+  });
+
+  // ✅ Get tab from route URL (like /employee-dashboard/leave)
+  const routeTab = this.route.snapshot.paramMap.get('section');
+
+  // ✅ Fallback to localStorage or default to 'profile'
+  const storedTab = localStorage.getItem('activeEmployeeTab');
+  if (routeTab && ['profile', 'attendance', 'leave', 'notifications', 'settings'].includes(routeTab)) {
+    this.activeTab = routeTab as 'profile' | 'attendance' | 'leave' | 'notifications' | 'settings';
+  } else if (storedTab && ['profile', 'attendance', 'leave', 'notifications', 'settings'].includes(storedTab)) {
+    this.activeTab = storedTab as any;
+  } else {
+    this.activeTab = 'profile';
   }
+
+  // ✅ Restore unread badge counts from localStorage
+  const storedUnreadNotificationCount = localStorage.getItem('unreadNotificationCount');
+  const storedUnreadLeaveCount = localStorage.getItem('unreadLeaveCount');
+  this.unreadNotificationCount = storedUnreadNotificationCount ? +storedUnreadNotificationCount : 0;
+  this.unreadLeaveCount = storedUnreadLeaveCount ? +storedUnreadLeaveCount : 0;
+
+  // ✅ Use session storage for user info
+  const userData = JSON.parse(sessionStorage.getItem('userData') || '{}');
+
+  if (!userData || userData.role !== 'employee') {
+    this.router.navigate(['/login']);
+    return;
+  }
+
+  const email = userData.email;
+
+  this.employeeService.getByEmail(email).subscribe({
+    next: data => {
+      this.employee = data;
+      this.employeeId = this.employee?.id;
+
+      if (!this.employeeId) {
+        console.error('Employee ID not found!');
+        return;
+      }
+
+      // Format DOB
+      if (this.employee?.dob) {
+        this.employee.dob = this.formatDate(this.employee.dob);
+      }
+
+      // Store personal details
+      this.personalDetails = {
+        ...this.employee,
+        dob: this.employee.dob || ''
+      };
+
+      // Watch leave status
+      this.watchLeaveStatus();
+
+      // Continue loading dashboard data
+      this.initializeDashboard();
+
+      // Load leave count (badge)
+      this.leaveService.getLeaveHistory(this.employeeId).subscribe(leaveHistory => {
+        this.leaveCount = leaveHistory?.length || 0;
+      });
+    },
+    error: err => {
+      console.error('Failed to load employee data', err);
+      this.loading = false;
+    }
+  });
+}
+
+
+
+
+  ngOnDestroy(): void {
+    if (this.leaveStatusIntervalId) {
+      clearInterval(this.leaveStatusIntervalId);
+    }
+  }
+  onTabChange(tab: string): void {
+  this.activeTab = tab as 'profile' | 'attendance' | 'leave' | 'notifications' | 'settings';
+  localStorage.setItem('activeEmployeeTab', tab);  // persist tab
+}
+
+setActiveTab(tab: 'profile' | 'attendance' | 'leave' | 'notifications' | 'settings') {
+  this.activeTab = tab;
+  localStorage.setItem('activeEmployeeTab', tab);
+
+  if (tab === 'notifications') {
+    this.unreadNotificationCount = 0;
+    localStorage.setItem('unreadNotificationCount', '0');
+  }
+
+  if (tab === 'leave') {
+    this.unreadLeaveCount = 0;
+    localStorage.setItem('unreadLeaveCount', '0');
+  }
+}
+
+
 
   initializeDashboard(): void {
     if (!this.employeeId) return;
@@ -139,16 +204,16 @@ export class EmployeeDashboardComponent implements OnInit {
     this.getAttendanceHistory();
     this.getLeaveHistory();
     this.loadPendingLeaves();
-    this.watchLeaveStatus();
 
-    this.personalDetails = {
-      name: this.employee.name || '',
-      email: this.employee.email || '',
-      phone: this.employee.phone || '',
-      dob: this.formatDate(this.employee.dob),
-      gender: this.employee.gender || '',
-      address: this.employee.address || ''
-    };
+this.personalDetails = {
+  name: this.employee.name || '',
+  email: this.employee.email || '',
+  phone: this.employee.phone || '',
+  dob: this.employee.dob ? this.formatDate(this.employee.dob) : '',
+  gender: this.employee.gender || '',
+  address: this.employee.address || ''
+};
+
 
     this.profilePicPreview = this.employee?.profilePic || null;
     this.loading = false;
@@ -156,9 +221,13 @@ export class EmployeeDashboardComponent implements OnInit {
 
   formatDate(date: string | Date | null): string {
     if (!date) return '';
-    const d = new Date(date);
-    return d.toISOString().split('T')[0];
+    return this.datePipe.transform(date, 'yyyy-MM-dd') || '';
   }
+goToTab(tabName: string) {
+  this.activeTab = tabName as 'profile' | 'attendance' | 'leave' | 'notifications' | 'settings';
+  this.router.navigate(['/employee-dashboard', tabName]);
+  localStorage.setItem('activeEmployeeTab', tabName);
+}
 
   getTodayAttendanceStatus(): void {
     if (!this.employeeId) return;
@@ -180,29 +249,50 @@ export class EmployeeDashboardComponent implements OnInit {
     this.showMonthlyAttendance = !this.showMonthlyAttendance;
   }
 
-  watchLeaveStatus(): void {
-    const leaveStatusInterval = setInterval(() => { // Store interval ID to clear it later if needed
-      if (!this.employeeId) return;
-      this.leaveService.getLeaveHistory(this.employeeId).subscribe((data: any[]) => { // Add type annotation for data
-        const recent = data[0];
-        if (recent && recent.status !== this.recentMessage) {
-          const formattedFromDate = this.datePipe.transform(new Date(recent.fromDate), 'shortDate');
-          const formattedToDate = this.datePipe.transform(new Date(recent.toDate), 'shortDate');
+watchLeaveStatus(): void {
+  if (this.leaveStatusIntervalId) {
+    clearInterval(this.leaveStatusIntervalId);
+  }
 
-          const msg = recent.status === 'Approved'
-            ? `🎉 Your leave from ${formattedFromDate} to ${formattedToDate} was Approved!`
-            : recent.status === 'Rejected'
-              ? `❌ Your leave from ${formattedFromDate} to ${formattedToDate} was Rejected.`
-              : '';
+  const seenLeaveIds = JSON.parse(localStorage.getItem('seenLeaveIds') || '[]');
 
-          if (msg) {
-            this.recentMessage = recent.status;
-            this.addNotification(msg);
-          }
+  this.leaveStatusIntervalId = setInterval(() => {
+    if (!this.employeeId) return;
+
+    this.leaveService.getLeaveHistory(this.employeeId).subscribe((data: Leave[]) => {
+      if (!data || data.length === 0) return;
+
+      const newLeaves = data.filter(leave => !seenLeaveIds.includes(leave.id));
+
+      newLeaves.forEach(recent => {
+        const formattedFromDate = this.datePipe.transform(new Date(recent.fromDate), 'shortDate');
+        const formattedToDate = this.datePipe.transform(new Date(recent.toDate), 'shortDate');
+
+        let msg = '';
+        if (recent.status === 'Approved') {
+          msg = `🎉 Your leave from ${formattedFromDate} to ${formattedToDate} was Approved!`;
+        } else if (recent.status === 'Rejected') {
+          msg = `❌ Your leave from ${formattedFromDate} to ${formattedToDate} was Rejected.`;
+        }
+
+        if (msg) {
+          this.addNotification(msg);
+          this.unreadNotificationCount++;
+          this.unreadLeaveCount++;
+
+          // Push this leave ID to seen list
+          seenLeaveIds.push(recent.id);
         }
       });
-    }, 1000);
-  }
+
+      // Save updated seen IDs and badge counts
+      localStorage.setItem('seenLeaveIds', JSON.stringify(seenLeaveIds));
+      localStorage.setItem('unreadNotificationCount', this.unreadNotificationCount.toString());
+      localStorage.setItem('unreadLeaveCount', this.unreadLeaveCount.toString());
+    });
+  }, 5000);
+}
+
 
   getLeaveHistory(): void {
     if (!this.employeeId) return;
@@ -220,6 +310,7 @@ export class EmployeeDashboardComponent implements OnInit {
 
   addNotification(message: string): void {
     this.notifications.unshift({ message, date: new Date() });
+    this.unreadNotificationCount++;
   }
 
   openLeaveForm(): void {
@@ -236,7 +327,7 @@ export class EmployeeDashboardComponent implements OnInit {
       return;
     }
 
-    const leave = {
+    const leave: Leave = {
       employeeId: this.employeeId,
       name: this.employee.name,
       reason: this.leaveReason,
@@ -292,33 +383,22 @@ export class EmployeeDashboardComponent implements OnInit {
     });
   }
 
-  logout() {
+  logout(): void {
     this.afAuth.signOut().then(() => {
       sessionStorage.removeItem('userData');
       this.router.navigate(['/login']);
     });
   }
-  openLogoutModal() {
-    // Ensure Bootstrap is loaded globally in your project
-    const logoutModal = new (window as any).bootstrap.Modal(document.getElementById('logoutModal'));
+
+  openLogoutModal(): void {
+    const logoutModal = new bootstrap.Modal(document.getElementById('logoutModal'));
     logoutModal.show();
   }
-  confirmLogout() {
-    sessionStorage.removeItem('userData'); 
-    this.router.navigate(['/login']); // 
+
+  confirmLogout(): void {
+    sessionStorage.removeItem('userData');
+    this.router.navigate(['/login']);
   }
-  // confirmLogout(): void {
-  //   this.afAuth.signOut().then(() => {
-  //     this.router.navigate(['/login']);
-  //     const modalElement = document.getElementById('logoutModal');
-  //     const modal = bootstrap.Modal.getInstance(modalElement); // Ensure bootstrap.Modal is correctly initialized
-  //     modal?.hide();
-  //     sessionStorage.clear();
-  //     localStorage.clear();
-  //   }).catch(error => {
-  //     console.error('Error logging out:', error);
-  //   });
-  // }
 
   showPersonalDetails(): void {
     this.personalDetails = {
@@ -335,7 +415,10 @@ export class EmployeeDashboardComponent implements OnInit {
   openModalById(id: string): void {
     const modalEl = document.getElementById(id);
     if (modalEl) {
-      const modal = new bootstrap.Modal(modalEl);
+      let modal = bootstrap.Modal.getInstance(modalEl);
+      if (!modal) {
+        modal = new bootstrap.Modal(modalEl);
+      }
       modal.show();
     }
   }
@@ -343,7 +426,10 @@ export class EmployeeDashboardComponent implements OnInit {
   openPersonalDetailsModal(): void {
     const modalElement = document.getElementById('personalDetailsModal');
     if (modalElement) {
-      const modal = new bootstrap.Modal(modalElement);
+      let modal = bootstrap.Modal.getInstance(modalElement);
+      if (!modal) {
+        modal = new bootstrap.Modal(modalElement);
+      }
       this.personalDetails = { ...this.employee };
       this.profilePicPreview = this.employee?.profilePic || null;
       modal.show();
@@ -355,7 +441,7 @@ export class EmployeeDashboardComponent implements OnInit {
     if (input.files && input.files.length > 0) {
       this.selectedFile = input.files[0];
       const reader = new FileReader();
-      reader.onload = () => this.profilePicPreview = reader.result;
+      reader.onload = () => (this.profilePicPreview = reader.result);
       reader.readAsDataURL(this.selectedFile);
     }
   }
@@ -390,11 +476,13 @@ export class EmployeeDashboardComponent implements OnInit {
       }
     });
   }
-  isDateDisabled = (date: NgbDate) => { 
-    return this.disabledDates.some(disabledDate => 
-      disabledDate.year === date.year && 
-      disabledDate.month === date.month && 
-      disabledDate.day === date.day
+
+  isDateDisabled = (date: NgbDate): boolean => {
+    return this.disabledDates.some(
+      disabledDate =>
+        disabledDate.year === date.year &&
+        disabledDate.month === date.month &&
+        disabledDate.day === date.day
     );
-  }
+  };
 }

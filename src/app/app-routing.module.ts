@@ -10,9 +10,8 @@ import { LeaveComponent } from './admin-dashboard/leave/leave.component';
 import { NotificationComponent } from './admin-dashboard/notification/notification.component';
 import { ProfileComponent } from './employee-dashboard/profile.component';
 import { LeavesComponent } from './employee-dashboard/leave.component';
-import { SettingsComponent } from './employee-dashboard/settings/settings.component';
-import { SettingComponent } from './admin-dashboard/settings/settings.component';
-
+import { EmployeeSettingsComponent } from './employee-dashboard/settings/settings.component';
+import { AdminSettingsComponent } from './admin-dashboard/settings/settings.component';
 const routes: Routes = [
   { path: '', redirectTo: 'login', pathMatch: 'full' },
   { path: 'login', component: LoginComponent },
@@ -26,7 +25,7 @@ const routes: Routes = [
       { path: 'attendance', component: AttendanceComponent },
       { path: 'leave', component: LeaveComponent },
       { path: 'notifications', component: NotificationComponent },
-      { path: 'settings', component: SettingComponent }  // Add route for the admin settings
+      { path: 'settings', component: AdminSettingsComponent }  // Add route for the admin settings
     ]
   },
   {
@@ -34,7 +33,7 @@ const routes: Routes = [
       { path: 'profile', component: ProfileComponent },
       { path: 'attendance', component: AttendanceComponent },
       { path: 'leaves', component: LeavesComponent },
-      { path: 'settings', component: SettingsComponent },  // Add route for the employee settings
+      { path: 'settings', component: EmployeeSettingsComponent },  // Add route for the employee settings
       { path: '', redirectTo: 'profile', pathMatch: 'full' }
     ]
   },

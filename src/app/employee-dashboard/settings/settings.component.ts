@@ -7,11 +7,11 @@ import firebase from 'firebase/compat/app';
 import 'firebase/compat/auth';
 
 @Component({
-  selector: 'app-settings',
+  selector: 'app-employee-settings',
   templateUrl: './settings.component.html',
   styleUrls: ['./settings.component.css']
 })
-export class SettingsComponent implements OnInit {
+export class EmployeeSettingsComponent implements OnInit {
   activeTab: string = 'profile';
   notifications: { message: string; date: Date }[] = [];
 
