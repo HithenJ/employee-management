@@ -276,9 +276,6 @@ this.profileForm = this.fb.group({
     if (!this.appSettingsForm.valid) return;
 
     const settings = this.appSettingsForm.value;
-    localStorage.setItem('darkMode', JSON.stringify(settings.darkMode));
-    document.body.classList.toggle('dark-mode', settings.darkMode);
-    this.darkMode = settings.darkMode;
 
     this.passwordSuccess = 'Settings updated successfully!';
     setTimeout(() => {
@@ -286,10 +283,6 @@ this.profileForm = this.fb.group({
     }, 3000);
   }
 
-  toggleDarkMode(event: Event) {
-    const checkbox = event.target as HTMLInputElement;
-    this.darkMode = checkbox.checked;
-    this.appSettingsForm.patchValue({ darkMode: this.darkMode });
-  }
+
 
 }
