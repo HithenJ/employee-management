@@ -1,12 +1,12 @@
 <div class="container-fluid d-flex justify-content-center align-items-center" style="min-height: 100vh; background: linear-gradient(to right, #e3f2fd, #ffffff);">
   <div class="card border-0 shadow-lg p-4 rounded-4" style="width: 100%; max-width: 420px;">
 
-    <!-- ✅ Check internet connection -->
+    <!-- No Internet Alert -->
     <div *ngIf="!isOnline" class="alert alert-danger text-center fw-semibold">
       🚫 No Internet Connection. Please connect and retry.
     </div>
 
-    <!-- ✅ Show login only when online -->
+    <!-- Login Form Container -->
     <ng-container *ngIf="isOnline">
       <!-- Logo -->
       <div class="text-center mb-4">
@@ -18,16 +18,11 @@
         {{ isAdminLogin ? 'Admin Login' : 'Employee Login' }}
       </h4>
 
-      <!-- Role Switch -->
+      <!-- Switch Role -->
       <div class="text-center mb-4">
         <button class="btn btn-outline-secondary btn-sm rounded-pill px-4" (click)="toggleLoginRole()">
           🔁 Switch to {{ isAdminLogin ? 'Employee' : 'Admin' }} Login
         </button>
-      </div>
-
-      <!-- Login Error -->
-      <div *ngIf="loginError" class="alert alert-warning text-center py-2">
-        {{ loginError }}
       </div>
 
       <!-- Login Form -->
@@ -44,6 +39,7 @@
             style="position: absolute; top: 50%; right: 15px; transform: translateY(-50%); cursor: pointer;"></i>
         </div>
 
+        <!-- Submit Button -->
         <button class="btn w-100 rounded-pill py-2"
           [ngClass]="isAdminLogin ? 'btn-danger' : 'btn-primary'" [disabled]="isLoggingIn">
           <ng-container *ngIf="!isLoggingIn">Login as {{ isAdminLogin ? 'Admin' : 'Employee' }}</ng-container>
@@ -53,6 +49,11 @@
           </ng-container>
         </button>
       </form>
+
+      <!-- Error Message -->
+      <div *ngIf="loginError" class="alert alert-warning text-center mt-3 py-2">
+        {{ loginError }}
+      </div>
     </ng-container>
 
   </div>
