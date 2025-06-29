@@ -301,13 +301,31 @@
           </div>
 
           <!-- Profile Picture -->
-          <div class="mb-3">
-            <label class="form-label fw-semibold">Profile Picture</label>
-            <input type="file" class="form-control" (change)="onFileSelected($event)">
-            <div *ngIf="profilePicPreview" class="mt-3">
-              <img [src]="profilePicPreview" alt="Preview" class="img-thumbnail rounded" width="120">
-            </div>
-          </div>
+        <div class="mb-3">
+  <label class="form-label fw-semibold">Profile Picture</label>
+
+  <!-- Hidden file input -->
+  <input
+    type="file"
+    #fileInput
+    class="d-none"
+    (change)="onFileSelected($event)"
+  />
+
+  <!-- Custom button -->
+  <button type="button" class="btn btn-outline-primary" (click)="fileInput.click()">
+    Choose Picture
+  </button>
+
+  <!-- Optional file name preview -->
+  <span *ngIf="selectedFileName" class="ms-2 text-muted">{{ selectedFileName }}</span>
+
+  <!-- Image preview -->
+  <div *ngIf="profilePicPreview" class="mt-3">
+    <img [src]="profilePicPreview" alt="Preview" class="img-thumbnail rounded" width="120" />
+  </div>
+</div>
+
         </div>
 
         <div class="modal-footer px-4 pb-4">

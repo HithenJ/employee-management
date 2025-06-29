@@ -58,7 +58,8 @@ export class EmployeeDashboardComponent implements OnInit, OnDestroy {
   showAttendanceModal = false;
   unreadNotificationCount = 0;
   unreadLeaveCount = 0;
-
+profilePicPreview: string | ArrayBuffer | null = null;
+selectedFileName: string = '';
   selectedSection = '';
   hasPersonalDetails = false;
   disabledDates: NgbDate[] = [];
@@ -74,7 +75,6 @@ export class EmployeeDashboardComponent implements OnInit, OnDestroy {
   };
 
   editableName = false;
-  profilePicPreview: string | ArrayBuffer | null = null;
   selectedFile: File | null = null;
   activeTab: 'profile' | 'attendance' | 'leave' | 'notifications' | 'settings' = 'profile';
 
@@ -436,15 +436,20 @@ watchLeaveStatus(): void {
     }
   }
 
-  onFileSelected(event: Event): void {
-    const input = event.target as HTMLInputElement;
-    if (input.files && input.files.length > 0) {
-      this.selectedFile = input.files[0];
-      const reader = new FileReader();
-      reader.onload = () => (this.profilePicPreview = reader.result);
-      reader.readAsDataURL(this.selectedFile);
-    }
+onFileSelected(event: Event): void {
+  const input = event.target as HTMLInputElement;
+
+  if (input.files && input.files.length > 0) {
+    this.selectedFile = input.files[0];
+    this.selectedFileName = this.selectedFile.name;
+
+    const reader = new FileReader();
+    reader.onload = () => {
+      this.profilePicPreview = reader.result;
+    };
+    reader.readAsDataURL(this.selectedFile);
   }
+}
 
   savePersonalDetails(): void {
     if (!this.employeeId) return;
