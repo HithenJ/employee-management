@@ -99,27 +99,8 @@ ngOnInit(): void {
     department: ['', Validators.required]
   });
 
-  // ✅ Get tab from route URL (like /employee-dashboard/leave)
-  const routeTab = this.route.snapshot.paramMap.get('section');
-
-  // ✅ Fallback to localStorage or default to 'profile'
-  const storedTab = localStorage.getItem('activeEmployeeTab');
-  if (routeTab && ['profile', 'attendance', 'leave', 'notifications', 'settings'].includes(routeTab)) {
-    this.activeTab = routeTab as 'profile' | 'attendance' | 'leave' | 'notifications' | 'settings';
-  } else if (storedTab && ['profile', 'attendance', 'leave', 'notifications', 'settings'].includes(storedTab)) {
-    this.activeTab = storedTab as any;
-  } else {
-    this.activeTab = 'profile';
-  }
-
-  // ✅ Restore unread badge counts from localStorage
-  const storedUnreadNotificationCount = localStorage.getItem('unreadNotificationCount');
-  const storedUnreadLeaveCount = localStorage.getItem('unreadLeaveCount');
-  this.unreadNotificationCount = storedUnreadNotificationCount ? +storedUnreadNotificationCount : 0;
-  this.unreadLeaveCount = storedUnreadLeaveCount ? +storedUnreadLeaveCount : 0;
-
   // ✅ Use session storage for user info
-  const userData = JSON.parse(sessionStorage.getItem('userData') || '{}');
+  const userData = JSON.parse(localStorage.getItem('userData') || '{}');
 
   if (!userData || userData.role !== 'employee') {
     this.router.navigate(['/login']);
@@ -128,6 +109,27 @@ ngOnInit(): void {
 
   const email = userData.email;
 
+  // ✅ Handle tab from URL or localStorage
+  const validTabs = ['profile', 'attendance', 'leave', 'notifications', 'settings'];
+
+  this.route.paramMap.subscribe(params => {
+    const section = params.get('section');
+    if (section && validTabs.includes(section)) {
+      this.activeTab = section as any;
+      localStorage.setItem('activeEmployeeTab', section);
+    } else {
+      const storedTab = localStorage.getItem('activeEmployeeTab');
+      this.activeTab = validTabs.includes(storedTab || '') ? (storedTab as any) : 'profile';
+    }
+  });
+
+  // ✅ Restore unread badge counts from localStorage
+  const storedUnreadNotificationCount = localStorage.getItem('unreadNotificationCount');
+  const storedUnreadLeaveCount = localStorage.getItem('unreadLeaveCount');
+  this.unreadNotificationCount = storedUnreadNotificationCount ? +storedUnreadNotificationCount : 0;
+  this.unreadLeaveCount = storedUnreadLeaveCount ? +storedUnreadLeaveCount : 0;
+
+  // ✅ Fetch employee data
   this.employeeService.getByEmail(email).subscribe({
     next: data => {
       this.employee = data;
@@ -138,24 +140,18 @@ ngOnInit(): void {
         return;
       }
 
-      // Format DOB
       if (this.employee?.dob) {
         this.employee.dob = this.formatDate(this.employee.dob);
       }
 
-      // Store personal details
       this.personalDetails = {
         ...this.employee,
         dob: this.employee.dob || ''
       };
 
-      // Watch leave status
       this.watchLeaveStatus();
-
-      // Continue loading dashboard data
       this.initializeDashboard();
 
-      // Load leave count (badge)
       this.leaveService.getLeaveHistory(this.employeeId).subscribe(leaveHistory => {
         this.leaveCount = leaveHistory?.length || 0;
       });
@@ -183,16 +179,7 @@ ngOnInit(): void {
 setActiveTab(tab: 'profile' | 'attendance' | 'leave' | 'notifications' | 'settings') {
   this.activeTab = tab;
   localStorage.setItem('activeEmployeeTab', tab);
-
-  if (tab === 'notifications') {
-    this.unreadNotificationCount = 0;
-    localStorage.setItem('unreadNotificationCount', '0');
-  }
-
-  if (tab === 'leave') {
-    this.unreadLeaveCount = 0;
-    localStorage.setItem('unreadLeaveCount', '0');
-  }
+  this.router.navigate(['/employee-dashboard', tab]);
 }
 
 
@@ -385,7 +372,7 @@ watchLeaveStatus(): void {
 
   logout(): void {
     this.afAuth.signOut().then(() => {
-      sessionStorage.removeItem('userData');
+      localStorage.removeItem('userData');
       this.router.navigate(['/login']);
     });
   }
@@ -396,7 +383,7 @@ watchLeaveStatus(): void {
   }
 
   confirmLogout(): void {
-    sessionStorage.removeItem('userData');
+    localStorage.removeItem('userData');
     this.router.navigate(['/login']);
   }
 

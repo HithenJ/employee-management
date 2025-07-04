@@ -15,9 +15,9 @@ import { AdminSettingsComponent } from './admin-dashboard/settings/settings.comp
 const routes: Routes = [
   { path: '', redirectTo: 'login', pathMatch: 'full' },
   { path: 'login', component: LoginComponent },
-  
-  { 
-    path: 'admin-dashboard', component: AdminDashboardComponent, 
+
+  {
+    path: 'admin-dashboard', component: AdminDashboardComponent,
     children: [
       { path: '', redirectTo: 'employees', pathMatch: 'full' },
       { path: 'employees', component: EmployeeListComponent },
@@ -25,20 +25,24 @@ const routes: Routes = [
       { path: 'attendance', component: AttendanceComponent },
       { path: 'leave', component: LeaveComponent },
       { path: 'notifications', component: NotificationComponent },
-      { path: 'settings', component: AdminSettingsComponent }  // Add route for the admin settings
+      { path: 'settings', component: AdminSettingsComponent }
     ]
   },
+
+  // ✅ This handles /employee-dashboard/profile, /employee-dashboard/attendance, etc.
   {
-    path: 'employee-dashboard', component: EmployeeDashboardComponent, children: [
-      { path: 'profile', component: ProfileComponent },
-      { path: 'attendance', component: AttendanceComponent },
-      { path: 'leaves', component: LeavesComponent },
-      { path: 'settings', component: EmployeeSettingsComponent },  // Add route for the employee settings
-      { path: '', redirectTo: 'profile', pathMatch: 'full' }
-    ]
+    path: 'employee-dashboard/:section',
+    component: EmployeeDashboardComponent
   },
-  { path: 'employee-dashboard/:id', component: EmployeeDashboardComponent },
+
+  // ✅ Optional fallback
+  {
+    path: 'employee-dashboard',
+    redirectTo: 'employee-dashboard/profile',
+    pathMatch: 'full'
+  }
 ];
+
 
 @NgModule({
   imports: [RouterModule.forRoot(routes)],
