@@ -23,7 +23,7 @@ export class AdminDashboardComponent implements OnInit, OnDestroy {
   ) {}
 
   ngOnInit(): void {
-    const adminData = JSON.parse(localStorage.getItem('adminData') || '{}');
+    const adminData = JSON.parse(sessionStorage.getItem('adminData') || '{}');
   
     if (!adminData || adminData.role !== 'admin') {
       this.router.navigate(['/login']);
@@ -92,7 +92,7 @@ export class AdminDashboardComponent implements OnInit, OnDestroy {
     logoutModal.show();
   }
   confirmLogout() {
-    localStorage.removeItem('adminData'); 
+    sessionStorage.removeItem('adminData'); 
     this.router.navigate(['/login']); // 
   }
   // Show and hide form for adding new employee

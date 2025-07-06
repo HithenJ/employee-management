@@ -83,35 +83,23 @@ this.profileForm = this.fb.group({
   }
 
   loadAdminData(): void {
-    this.adminSubscription = this.afAuth.authState.pipe(take(1)).subscribe(user => {
-      if (user?.email) {
-        this.adminEmail = user.email;
-        this.profileForm.patchValue({ adminEmail: this.adminEmail });
+  const adminDataStr = sessionStorage.getItem('adminData');
+  if (!adminDataStr) return;
 
-   this.adminService.getAdminByEmail(this.adminEmail).subscribe({
-  next: (admin) => {
-    if (admin) {
-      this.adminId = admin.id;
-      this.profilePicUrl = admin.profilePic?.startsWith('data:')
-        ? admin.profilePic
-        : `data:image/jpeg;base64,${admin.profilePic}`;
+  const admin = JSON.parse(adminDataStr);
+  this.adminId = admin.id;
+  this.adminEmail = admin.email;
+  this.profilePicUrl = admin.profilePic?.startsWith('data:')
+    ? admin.profilePic
+    : `data:image/jpeg;base64,${admin.profilePic}`;
 
-      this.profileForm.patchValue({
-        adminName: admin.name,
-        adminPhone: admin.phone 
-      });
-    }
-  },
+  this.profileForm.patchValue({
+    adminName: admin.name,
+    adminEmail: admin.email,
+    adminPhone: admin.phone
+  });
+}
 
-          error: (error) => {
-            console.error('Error loading admin data:', error);
-            this.profilePicUrl = null;
-          }
-        });
-      }
-    });
-    }
-  
 
   onFileSelected(event: Event) {
     const input = event.target as HTMLInputElement;
@@ -137,84 +125,61 @@ this.profileForm = this.fb.group({
     }
   }
 
-  saveProfilePicture(): void {
-    if (!this.adminId || !this.profilePicUrl) {
-      this.profilePicSaveError = 'Please select a profile picture first';
-      setTimeout(() => {
-        this.profilePicSaveError = '';
-      }, 3000);
-      return;
-    }
-
-    this.isProfilePicSaving = true;
-    try {
-      const base64String = this.profilePicUrl.split(',')[1];
-      const formData = {
-        profilePic: base64String,
-        name: this.profileForm.get('adminName')?.value,
-        email: this.profileForm.get('adminEmail')?.value
-      };
-
-      this.adminService.updateAdminProfile(this.adminId, formData).subscribe({
-        next: () => {
-          this.profilePicSaveSuccess = 'Profile picture uploaded successfully!';
-          this.isProfilePicSaving = false;
-          setTimeout(() => {
-            this.profilePicSaveSuccess = '';
-          }, 3000);
-
-
-        },
-        error: (error) => {
-          this.profilePicSaveError = 'Error updating profile picture: ' + (error.message || 'Unknown error');
-          this.isProfilePicSaving = false;
-          setTimeout(() => {
-            this.profilePicSaveError = '';
-          }, 3000);
-        }
-      });
-    } catch (error) {
-      this.isProfilePicSaving = false;
-      this.profilePicSaveError = 'Error processing image: ' + (error instanceof Error ? error.message : 'Unknown error');
-      setTimeout(() => {
-        this.profilePicSaveError = '';
-      }, 3000);
-    }
-
-
-    try {
-      const base64String = this.profilePicUrl.split(',')[1];
-      const formData = {
-        profilePic: base64String,
-        name: this.profileForm.get('adminName')?.value,
-        email: this.adminEmail
-      };
-
-      this.adminService.updateAdminProfile(this.adminId, formData).subscribe({
-        next: () => {
-          this.isProfilePicSaving = false;
-          this.profilePicSaveSuccess = 'Profile picture updated successfully!';
-          this.isProfilePicSelected = false;
-          setTimeout(() => {
-            this.profilePicSaveSuccess = '';
-          }, 3000);
-        },
-        error: (err) => {
-          this.isProfilePicSaving = false;
-          this.profilePicSaveError = 'Error updating profile picture: ' + (err.error?.message || 'Unknown error');
-          setTimeout(() => {
-            this.profilePicSaveError = '';
-          }, 3000);
-        }
-      });
-    } catch (error: unknown) {
-      this.isProfilePicSaving = false;
-      this.profilePicSaveError = 'Error processing image: ' + (error instanceof Error ? error.message : 'Unknown error');
-      setTimeout(() => {
-        this.profilePicSaveError = '';
-      }, 3000);
-    }
+saveProfilePicture(): void {
+  if (!this.adminId || !this.profilePicUrl) {
+    this.profilePicSaveError = 'Please select a profile picture first';
+    setTimeout(() => {
+      this.profilePicSaveError = '';
+    }, 3000);
+    return;
   }
+
+  this.isProfilePicSaving = true;
+
+  try {
+    const base64String = this.profilePicUrl.split(',')[1];
+    const formData = {
+      profilePic: base64String,
+      name: this.profileForm.get('adminName')?.value,
+      email: this.adminEmail
+    };
+
+    this.adminService.updateAdminProfile(this.adminId, formData).subscribe({
+      next: () => {
+        this.profilePicSaveSuccess = 'Profile picture uploaded successfully!';
+        this.isProfilePicSaving = false;
+        this.isProfilePicSelected = false;
+
+        // ✅ Update sessionStorage after saving to DB
+        const updatedAdminData = {
+          ...JSON.parse(sessionStorage.getItem('adminData') || '{}'),
+          name: formData.name,
+          profilePic: 'data:image/jpeg;base64,' + base64String
+        };
+        sessionStorage.setItem('adminData', JSON.stringify(updatedAdminData));
+
+        setTimeout(() => {
+          this.profilePicSaveSuccess = '';
+        }, 3000);
+      },
+      error: (error) => {
+        this.profilePicSaveError = 'Error updating profile picture: ' + (error.message || 'Unknown error');
+        this.isProfilePicSaving = false;
+        setTimeout(() => {
+          this.profilePicSaveError = '';
+        }, 3000);
+      }
+    });
+
+  } catch (error) {
+    this.isProfilePicSaving = false;
+    this.profilePicSaveError = 'Error processing image: ' + (error instanceof Error ? error.message : 'Unknown error');
+    setTimeout(() => {
+      this.profilePicSaveError = '';
+    }, 3000);
+  }
+}
+
 
   onProfileSubmit(): void {
     if (!this.profileForm.valid || !this.adminId) return;

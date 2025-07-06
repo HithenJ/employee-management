@@ -29,13 +29,12 @@ export class LoginComponent implements OnInit, OnDestroy {
   }
 
   ngOnInit() {
-    // ✅ Check login from localStorage now
-    const adminData = localStorage.getItem('adminData');
-    const employeeData = localStorage.getItem('userData');
+    const adminData = sessionStorage.getItem('adminData');
+    const employeeData = sessionStorage.getItem('userData');
 
-    if (adminData && this.router.url !== '/admin-dashboard') {
+    if (adminData) {
       this.router.navigate(['/admin-dashboard']);
-    } else if (employeeData && this.router.url !== '/employee-dashboard') {
+    } else if (employeeData) {
       this.router.navigate(['/employee-dashboard']);
     }
 
@@ -50,7 +49,7 @@ export class LoginComponent implements OnInit, OnDestroy {
 
   updateOnlineStatus = () => {
     this.isOnline = navigator.onLine;
-  }
+  };
 
   togglePasswordVisibility() {
     this.showPassword = !this.showPassword;
@@ -72,7 +71,8 @@ export class LoginComponent implements OnInit, OnDestroy {
     this.isLoggingIn = true;
     const { email, password } = this.loginForm.value;
 
-    this.afAuth.signInWithEmailAndPassword(email, password)
+    this.afAuth
+      .signInWithEmailAndPassword(email, password)
       .then((result) => {
         const loggedInEmail = result.user?.email;
 
@@ -87,16 +87,19 @@ export class LoginComponent implements OnInit, OnDestroy {
             }
 
             const userData = {
+              id: res.id,
               email: res.email,
               name: res.name,
-              role: res.role
+              phone: res.phone || '',
+              profilePic: res.profilePic || null,
+              role: res.role,
             };
 
             if (res.role === 'admin') {
-              localStorage.setItem('adminData', JSON.stringify(userData));  // ✅ localStorage
+              sessionStorage.setItem('adminData', JSON.stringify(userData));
               this.router.navigate(['/admin-dashboard']);
             } else if (res.role === 'employee') {
-              localStorage.setItem('userData', JSON.stringify(userData));  // ✅ localStorage
+              sessionStorage.setItem('userData', JSON.stringify(userData));
               this.router.navigate(['/employee-dashboard']);
             } else {
               this.loginError = '⚠️ Unrecognized user role.';
@@ -105,20 +108,20 @@ export class LoginComponent implements OnInit, OnDestroy {
           error: (err) => {
             console.error('Error fetching user data:', err);
             this.loginError = '❌ Could not fetch user details. Try again later.';
-          }
+          },
         });
       })
-      .catch(err => {
+      .catch((err) => {
         if (
           err.code === 'auth/invalid-login-credentials' ||
           err.code === 'auth/user-not-found' ||
           err.code === 'auth/wrong-password'
         ) {
-          this.loginError = ' Invalid email or password. Please try again.';
+          this.loginError = 'Invalid email or password. Please try again.';
         } else if (err.code === 'auth/invalid-email') {
-          this.loginError = ' Please enter a valid email address.';
+          this.loginError = 'Please enter a valid email address.';
         } else {
-          this.loginError = ' Login failed: ' + err.message;
+          this.loginError = 'Login failed: ' + err.message;
         }
       })
       .finally(() => {

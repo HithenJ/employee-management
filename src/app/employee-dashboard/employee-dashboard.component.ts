@@ -6,7 +6,6 @@ import { LeaveService } from '../services/leave.service';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { DatePipe } from '@angular/common';
 import { NgbDate } from '@ng-bootstrap/ng-bootstrap';
-import { EmployeeSettingsComponent } from './settings/settings.component';
 declare var bootstrap: any; // Ensure bootstrap is globally available
 
 interface Employee {
@@ -100,7 +99,7 @@ ngOnInit(): void {
   });
 
   // ✅ Use session storage for user info
-  const userData = JSON.parse(localStorage.getItem('userData') || '{}');
+  const userData = JSON.parse(sessionStorage.getItem('userData') || '{}');
 
   if (!userData || userData.role !== 'employee') {
     this.router.navigate(['/login']);
@@ -372,7 +371,7 @@ watchLeaveStatus(): void {
 
   logout(): void {
     this.afAuth.signOut().then(() => {
-      localStorage.removeItem('userData');
+      sessionStorage.removeItem('userData');
       this.router.navigate(['/login']);
     });
   }
@@ -383,7 +382,7 @@ watchLeaveStatus(): void {
   }
 
   confirmLogout(): void {
-    localStorage.removeItem('userData');
+    sessionStorage.removeItem('userData');
     this.router.navigate(['/login']);
   }
 

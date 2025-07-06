@@ -2,7 +2,9 @@ import { Component, OnInit } from '@angular/core';
 import { FormGroup, FormBuilder, Validators } from '@angular/forms';
 import { Router } from '@angular/router';
 import { AngularFireAuth } from '@angular/fire/compat/auth';
-import { AngularFirestore } from '@angular/fire/compat/firestore'; // ✅ Firestore
+import { AngularFirestore } from '@angular/fire/compat/firestore';
+import { EmployeeService } from 'src/app/services/employee.service';
+import { take } from 'rxjs/operators'; // ✅ Firestore
 import firebase from 'firebase/compat/app';
 import 'firebase/compat/auth';
 
@@ -30,14 +32,29 @@ export class EmployeeSettingsComponent implements OnInit {
     private fb: FormBuilder,
     private router: Router,
     private afAuth: AngularFireAuth,
-    private firestore: AngularFirestore 
+    private firestore: AngularFirestore,
+    private employeeService: EmployeeService
   ) {}
 
   ngOnInit(): void {
     this.addNotification('Welcome to the Settings page!');
     this.initializeForm();
-    this.fetchUserMetadata();
-    this.loadPasswordLogs(); 
+    
+    // Check user role before fetching data
+    this.afAuth.authState.pipe(take(1)).subscribe((user: any) => {
+      if (user?.email) {
+        this.employeeService.getUserRole(user.email).subscribe(role => {
+          if (role !== 'employee') {
+            console.error('Unauthorized access: User is not an employee');
+            this.router.navigate(['/unauthorized']);
+            return;
+          }
+          // Proceed with fetching employee data
+          this.fetchUserMetadata();
+          this.loadPasswordLogs();
+        });
+      }
+    }); 
 
   }
 
