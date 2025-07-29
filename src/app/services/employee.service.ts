@@ -33,11 +33,11 @@ export class EmployeeService {
   }
 
   //  Delete employee
-  delete(id: number): Observable<any> {
-    const deleteUrl = `${this.employeeApiUrl}/${id}`;
-    console.log(`Sending DELETE request to: ${deleteUrl}`);
-    return this.http.delete(deleteUrl);
-  }
+delete(id: number): Observable<any> {
+  const url = `${this.employeeApiUrl}/${id}`;
+  console.log(`Sending DELETE request to: ${url}`);
+  return this.http.delete(url);
+}
 
   //  Get employee by email
   getByEmail(email: string): Observable<any> {
