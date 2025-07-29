@@ -49,18 +49,43 @@ router.patch('/:id', employeeController.updateStatus);
 
 // ✅ DELETE employee
 router.delete('/:id', (req, res) => {
-    const { id } = req.params;
+  const { id } = req.params;
 
-    connection.query('DELETE FROM employees WHERE id = ?', [id], (err, result) => {
-        if (err) return res.status(500).json({ message: 'Database Error' });
+  connection.query('SELECT * FROM employees WHERE id = ?', [id], (checkErr, results) => {
+    if (checkErr) {
+      console.error('Error checking employee existence:', checkErr);
+      return res.status(500).json({ message: 'Database error during existence check' });
+    }
 
-        if (result.affectedRows === 0) {
-            return res.status(404).json({ message: 'Employee not found' });
+    if (results.length === 0) {
+      return res.status(404).json({ message: 'Employee not found' });
+    }
+
+    // Delete associated attendance records first
+    connection.query('DELETE FROM attendance WHERE employeeId = ?', [id], (attErr) => {
+      if (attErr) {
+        console.error('Error deleting attendance records:', attErr);
+        return res.status(500).json({ message: 'Failed to delete related attendance records' });
+      }
+
+      // Now delete the employee
+      connection.query('DELETE FROM employees WHERE id = ?', [id], (delErr, result) => {
+        if (delErr) {
+          console.error('Error deleting employee:', delErr);
+          return res.status(500).json({ message: 'Failed to delete employee' });
         }
 
-        res.status(200).json({ message: 'Employee deleted successfully' });
+        if (result.affectedRows === 0) {
+          return res.status(404).json({ message: 'Employee not found' });
+        }
+
+        res.status(200).json({ message: 'Employee and related attendance deleted successfully' });
+      });
     });
+  });
 });
+
+
 
 // ✅ POST: Update profile picture and name/email
 router.post('/profile-pic/:id', (req, res) => {
