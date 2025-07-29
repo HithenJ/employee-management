@@ -1,0 +1,52 @@
+<div class="container mt-4">
+  <h3 class="mb-4 text-primary">{{ isEditMode ? 'Edit Employee' : 'Add New Employee' }}</h3>
+
+  <form [formGroup]="employeeForm" (ngSubmit)="onSubmit()">
+    <div class="row g-3">
+      <div class="col-md-6">
+        <label class="form-label">Full Name</label>
+        <input formControlName="name" class="form-control" placeholder="Enter name" />
+      </div>
+
+      <div class="col-md-6">
+        <label class="form-label">Email</label>
+        <input type="email" formControlName="email" class="form-control" placeholder="Enter email" />
+      </div>
+
+      <div class="col-md-6">
+        <label class="form-label">Phone</label>
+        <input type="text" formControlName="phone" class="form-control" placeholder="Enter phone" />
+      </div>
+      <div class="col-md-6">
+        <label class="form-label">Role</label>
+        <select formControlName="role" class="form-select">
+          <option value="employee">Employee</option>
+          <option value="admin">Admin</option>
+        </select>
+      </div>
+      
+      <div class="col-md-6">
+        <label class="form-label">Department</label>
+        <input type="text" formControlName="department" class="form-control" placeholder="Enter department" />
+      </div>
+
+
+      <div class="col-md-6">
+        <label class="form-label">Salary</label>
+        <input type="number" formControlName="salary" class="form-control" placeholder="Enter salary" />
+      </div>
+    </div>
+
+    <div class="mt-4 d-flex justify-content-start">
+      <button type="submit" class="btn btn-primary me-2">
+        {{ isEditMode ? 'Update' : 'Add' }} Employee
+      </button>
+      <button type="button" class="btn btn-secondary" (click)="cancel()">Cancel</button>
+    </div>
+
+    <!-- Success Message -->
+    <div *ngIf="successMessage" class="alert alert-success mt-3" role="alert">
+      {{ successMessage }}
+    </div>
+  </form>
+</div>
